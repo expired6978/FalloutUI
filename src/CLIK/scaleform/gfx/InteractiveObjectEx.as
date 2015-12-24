@@ -1,4 +1,4 @@
-/**************************************************************************
+﻿/**************************************************************************
 
 Filename    :   InteractiveObjectEx.as
 
@@ -14,7 +14,7 @@ package scaleform.gfx
 {
    import flash.display.InteractiveObject;
 
-   public final class InteractiveObjectEx extends DisplayObjectEx
+   public class InteractiveObjectEx extends DisplayObjectEx
    {       
 
        static public function setHitTestDisable(o:InteractiveObject, f:Boolean) : void { }

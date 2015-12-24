@@ -1,8 +1,9 @@
 ﻿package scaleform.gfx 
 {
-    import flash.text.TextField
+    import flash.text.TextField;
+	import flash.display.*;
     
-    public final class TextFieldEx extends InteractiveObjectEx
+    public class TextFieldEx extends InteractiveObjectEx
     {
         public function TextFieldEx()
         {

@@ -1,4 +1,4 @@
-package 
+﻿package 
 {
     import Shared.AS3.*;
     
@@ -7,7 +7,6 @@ package
         public function FeatureList()
         {
             super();
-            return;
         }
     }
 }
