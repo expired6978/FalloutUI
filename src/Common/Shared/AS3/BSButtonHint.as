@@ -1,4 +1,4 @@
-package Shared.AS3 
+﻿package Shared.AS3 
 {
     import Shared.*;
     import Shared.AS3.COMPANIONAPP.*;
@@ -191,11 +191,10 @@ package Shared.AS3
             return;
         }
 
-        internal function SetUpTextFields(arg1:flash.text.TextField):*
+        internal function SetUpTextFields(tf:flash.text.TextField):*
         {
-            arg1.autoSize = flash.text.TextFieldAutoSize.LEFT;
-            arg1.antiAliasType = flash.text.AntiAliasType.NORMAL;
-            return;
+            tf.autoSize = flash.text.TextFieldAutoSize.LEFT;
+            tf.antiAliasType = flash.text.AntiAliasType.NORMAL;
         }
 
         public function get PCKey():String

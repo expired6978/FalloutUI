@@ -1,4 +1,4 @@
-package Shared.AS3 
+﻿package Shared.AS3 
 {
     import Shared.AS3.COMPANIONAPP.*;
     import __AS3__.vec.*;
@@ -250,7 +250,7 @@ package Shared.AS3
 
         internal var _buttonHintDataV:__AS3__.vec.Vector.<Shared.AS3.BSButtonHintData>;
 
-        internal var ButtonPoolV:__AS3__.vec.Vector.<Shared.AS3.BSButtonHint>;
+        public var ButtonPoolV:__AS3__.vec.Vector.<Shared.AS3.BSButtonHint>;
 
         internal var _bRedirectToButtonBarMenu:Boolean=true;
 

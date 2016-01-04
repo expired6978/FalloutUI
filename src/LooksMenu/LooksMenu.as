@@ -245,8 +245,16 @@
 			this.BGSCodeObj["StartBodyEdit"] = function() { }
 			this.BGSCodeObj["WeightPointChange"] = function(x: Number, y: Number) { SetWeightPoint(x,y); }
 			this.eMode = this.BODY_MODE;
-			utils.Debug.dump("LooksMenu", this, false, 0, function(a_obj){ return ["BGSCodeObj"]; } );
-			UpdateButtons();*/
+			//utils.Debug.dump("LooksMenu", this, false, 0, function(a_obj){ return ["BGSCodeObj"]; } );
+			try
+			{
+				UpdateButtons();
+			}
+			catch(e:Error)
+			{
+				
+			}
+			onApplyColorChange(1.0, 0, 0, 1.0);*/
         }
 		
 		public function onApplyColorChange(r, g, b, multiplier): Array
@@ -257,9 +265,29 @@
 			var mint:uint = multiplier * 255;
 			try 
             {
-				//WeightTriangle_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
-                //LoadingSpinner_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
-       			ButtonHintBar_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
+				WeightTriangle_mc.CurrentWeightTick_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
+				WeightTriangle_mc.Triangle_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
+                LoadingSpinner_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, 0);
+       			ButtonHintBar_mc.ButtonBracket_Left_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
+				ButtonHintBar_mc.ButtonBracket_Right_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
+				
+				var textColor: uint = (mint << 24) | (rint << 16) | (gint << 8) | bint;
+				FacePartLabel_tf.textColor = textColor;
+				WeightTriangle_mc.Large_tf.textColor = textColor;
+				WeightTriangle_mc.Thin_tf.textColor = textColor;
+				WeightTriangle_mc.Muscular_tf.textColor = textColor;
+				
+				trace(ButtonHintBar_mc.ButtonPoolV.length);
+				for(var i = 0; i < ButtonHintBar_mc.ButtonPoolV.length; i++)
+				{
+					trace(ButtonHintBar_mc.ButtonPoolV[i]);
+					trace(ButtonHintBar_mc.ButtonPoolV[i].textField_tf);
+					trace(ButtonHintBar_mc.ButtonPoolV[i].IconHolderInstance.IconAnimInstance.Icon_tf);
+					trace(ButtonHintBar_mc.ButtonPoolV[i].SecondaryIconHolderInstance.IconAnimInstance.Icon_tf);
+					ButtonHintBar_mc.ButtonPoolV[i].textField_tf.textColor = textColor;
+            		ButtonHintBar_mc.ButtonPoolV[i].IconHolderInstance.IconAnimInstance.Icon_tf.textColor = textColor;
+            		ButtonHintBar_mc.ButtonPoolV[i].SecondaryIconHolderInstance.IconAnimInstance.Icon_tf.textColor = textColor;
+				}
             }
             catch (e:Error)
             {
@@ -627,7 +655,6 @@
 
         internal function FeatureMode(a_feature:uint):*
         {
-            var loc5:*=undefined;
             eMode = FEATURE_MODE;
             eFeature = a_feature;
             UpdateButtons();
@@ -664,8 +691,8 @@
                 }
                 case AST_COLOR:
                 {
-                    loc5 = FacialBoneRegions[CurrentActor][boneIndex].headPart;
-                    Shared.GlobalFunc.SetText(FacePartLabel_tf, loc5 != HeadPartEyes ? "$SKIN TONE" : "$EYE COLOR", false);
+                    var region = FacialBoneRegions[CurrentActor][boneIndex].headPart;
+                    Shared.GlobalFunc.SetText(FacePartLabel_tf, region != HeadPartEyes ? "$SKIN TONE" : "$EYE COLOR", false);
                     BGSCodeObj.CreateUndoPoint(UNDO_COLOR, CurrentBoneID);
                     panelTitle = "$COLOR";
                     UpdateFeatureModifierButtonHint();
@@ -809,6 +836,7 @@
                             case AST_EYES:
                             case AST_COLOR:
                             {
+								trace("AST_COLOR: group: " + CurrentExtraGroup + " selected: " + currentIndex);
                                 BGSCodeObj.ChangeColor(currentIndex);
                                 break;
                             }
@@ -828,6 +856,7 @@
                                 }
                                 CurrentExtraNumColors = BGSCodeObj.GetDetailColorCount(CurrentExtraGroup, CurrentSelectedExtra);
                                 CurrentExtraColor = BGSCodeObj.GetDetailColor(CurrentExtraGroup, CurrentSelectedExtra);
+								trace("AST_EXTRAS: group: " + CurrentExtraGroup + " selected: " + CurrentSelectedExtra + " intensity: " + CurrentFeatureIntensity + " numColors: " + CurrentExtraNumColors + " color: " + CurrentExtraColor);
                                 UpdateFeatureModifierButtonHint();
                                 break;
                             }
