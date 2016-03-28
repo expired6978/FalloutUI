@@ -19,7 +19,7 @@
         internal const FeatureModeInputMap:Object={"Done":1, "Accept":1, "Cancel":2, "Space":3, "R":4, "KeyLeft":7, "KeyRight":8};
         internal const FeatureCategoryModeInputMap:Object={"Accept":1, "Cancel":2, "R":4};
         internal const InputMapA:Array=[this.StartModeInputMapController, this.FaceHairModeInputMap, this.BodyModeInputMap, this.SculptModeInputMap, this.FaceHairModeInputMap, this.FeatureModeInputMap, this.FeatureCategoryModeInputMap];
-        internal const StartModeFunctionsReleased:Array=[ConfirmCloseMenu, FaceMode, BodyMode, ExtrasMode, ChangeSex, CharacterPresetLeft, CharacterPresetRight, undefined, undefined, undefined, undefined, undefined, undefined];
+        internal const StartModeFunctionsReleased:Array=[ConfirmCloseMenu, FaceMode, BodyMode, ExtrasMode, ChangeSex, CharacterPresetLeft, CharacterPresetRight, PresetMode, undefined, undefined, undefined, undefined, undefined];
         internal const FaceModeFunctionsReleased:Array=[ConfirmCloseMenu, SculptMode, StartMode, TypeMode, ColorMode, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined];
         internal const BodyModeFunctionsReleased:Array=[undefined, AcceptChanges, CancelChanges, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined];
         internal const SculptModeFunctionsReleased:Array=[undefined, AcceptChanges, CancelChanges, undefined, undefined, undefined, undefined, SculptModeRotateLeft, SculptModeRotateRight, SculptModeShrink, SculptModeEnlarge, SculptModeOut, SculptModeIn];
@@ -65,6 +65,7 @@
         internal const HAIR_MODE:uint=4;
         internal const FEATURE_MODE:uint=5;
         internal const FEATURE_CATEGORY_MODE:uint=6;
+		internal const PRESET_MODE:uint=7;
         internal const AST_HAIR:uint=0;
         internal const AST_HAIR_COLOR:uint=1;
         internal const AST_BEARD:uint=2;
@@ -91,6 +92,8 @@
         internal const EDIT_HAIRCUT:uint=2;
         internal const EDIT_BODYMOD:uint=3;
         protected var _buttonHintDataV:__AS3__.vec.Vector.<Shared.AS3.BSButtonHintData>;
+		protected var buttonHint_StartMode_BodyPreset:Shared.AS3.BSButtonHintData;
+		protected var buttonHint_StartMode_Preset:Shared.AS3.BSButtonHintData;
         protected var buttonHint_StartMode_Face:Shared.AS3.BSButtonHintData;
         protected var buttonHint_StartMode_Extras:Shared.AS3.BSButtonHintData;
         protected var buttonHint_StartMode_Sex:Shared.AS3.BSButtonHintData;
@@ -151,13 +154,13 @@
         protected var buttonHint_FaceMode_Type:Shared.AS3.BSButtonHintData;
         protected var buttonHint_HairMode_Style:Shared.AS3.BSButtonHintData;
         protected var buttonHint_FaceMode_Sculpt:Shared.AS3.BSButtonHintData;
-        protected var buttonHint_StartMode_Preset:Shared.AS3.BSButtonHintData;
         internal var CurrentSelectedExtra:uint=0;
 		
 		public static var GlobalTintColors:Array=[1.0, 0.0, 1.0, 1.0];
 		
         public function LooksMenu()
         {
+			this.buttonHint_StartMode_BodyPreset = new Shared.AS3.BSButtonHintData("$PRESET", "F5", "PSN_L3", "Xenon_L3", 1, this.PresetMode);
             this.buttonHint_StartMode_Face = new Shared.AS3.BSButtonHintData("$FACE", "F", "PSN_A", "Xenon_A", 1, this.FaceMode);
             this.buttonHint_StartMode_Extras = new Shared.AS3.BSButtonHintData("$EXTRAS", "E", "PSN_X", "Xenon_X", 1, this.ExtrasMode);
             this.buttonHint_StartMode_Sex = new Shared.AS3.BSButtonHintData("$SEX", "X", "PSN_Y", "Xenon_Y", 1, this.ChangeSex);
@@ -204,6 +207,7 @@
             this.buttonHint_FeatureMode_Modifier.SetSecondaryButtons("D", "PSN_R1", "Xenon_R1");
             this.buttonHint_FeatureMode_Modifier.secondaryButtonCallback = this.FeatureModeLBumper;
             this._buttonHintDataV = new Vector.<Shared.AS3.BSButtonHintData>();
+			this._buttonHintDataV.push(this.buttonHint_StartMode_BodyPreset);
             this._buttonHintDataV.push(this.buttonHint_StartMode_Preset);
             this._buttonHintDataV.push(this.buttonHint_StartMode_Face);
             this._buttonHintDataV.push(this.buttonHint_StartMode_Extras);
@@ -347,7 +351,7 @@
             var loc4:*=undefined;
             var loc1:*=this.GetBoneRegionIndexFromCurrentID();
             var loc2:*=this.eMode == this.SCULPT_MODE || this.eMode == this.FEATURE_MODE;
-            this.buttonHint_StartMode_Preset.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && this.EditMode == this.EDIT_CHARGEN;
+			this.buttonHint_StartMode_BodyPreset.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && this.EditMode == this.EDIT_CHARGEN;
             this.buttonHint_StartMode_Preset.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && this.EditMode == this.EDIT_CHARGEN;
             this.buttonHint_StartMode_Face.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
             this.buttonHint_StartMode_Extras.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
@@ -802,11 +806,6 @@
         internal function onFeatureSelectionChange():*
         {
             var currentIndex:*=0;
-            var loc2:*=0;
-            var loc3:*=0;
-            var loc4:*=0;
-            var loc5:*=NaN;
-            var loc6:*=undefined;
             if (FeatureListChangeLock == 0) 
             {
                 currentIndex = FeaturePanel_mc.List_mc.selectedIndex;
@@ -816,6 +815,7 @@
                     {
                         CurrentFeatureIntensity = 0;
                         CurrentExtraNumColors = 0;
+						trace("onFeatureSelectionChange: " + currentIndex + " Mode: " + eMode + " Feature: " + eFeature);
                         switch (eFeature) 
                         {
                             case AST_HAIR:
@@ -862,27 +862,25 @@
                             }
                             case AST_MORPHS:
                             {
-                                loc2 = GetBoneRegionIndexFromCurrentID();
-                                loc3 = FacialBoneRegions[CurrentActor][loc2].presetCount;
-                                if ((loc4 = FacialBoneRegions[CurrentActor][loc2].presetIndex) != currentIndex) 
+                                var boneIndex:uint = GetBoneRegionIndexFromCurrentID();
+                                var presetCount = FacialBoneRegions[CurrentActor][boneIndex].presetCount;
+                                if (FacialBoneRegions[CurrentActor][boneIndex].presetIndex != currentIndex) 
                                 {
-                                    BGSCodeObj.ChangePreset(CurrentBoneID, uint(loc1));
-                                    FacialBoneRegions[CurrentActor][loc2].presetIndex = currentIndex;
-                                    loc5 = currentIndex != AppliedMorphIndex ? FacialBoneRegions[CurrentActor][loc2].presetsSupportIntensity ? currentIndex ? 1 : -1 : -1 : AppliedMorphIntensity;
-                                    FacialBoneRegions[CurrentActor][loc2].presetIntensity = loc5;
+                                    BGSCodeObj.ChangePreset(CurrentBoneID, uint(currentIndex));
+                                    FacialBoneRegions[CurrentActor][boneIndex].presetIndex = currentIndex;
+                                    var morphIntensity: Number = currentIndex != AppliedMorphIndex ? FacialBoneRegions[CurrentActor][boneIndex].presetsSupportIntensity ? currentIndex ? 1 : -1 : -1 : AppliedMorphIntensity;
+                                    FacialBoneRegions[CurrentActor][boneIndex].presetIntensity = intensity;
                                     BGSCodeObj.NotifyForWittyBanter(GetBanterFlavor(AST_COUNT));
                                     dirty = true;
-                                    loc6 = 0;
-                                    while (loc6 < FacialBoneRegions[CurrentActor].length) 
+                                    for(var i = 0; i < FacialBoneRegions[CurrentActor].length; i++)
                                     {
-                                        if (!(loc6 == loc2) && FacialBoneRegions[CurrentActor][loc6].associatedPresetGroup == FacialBoneRegions[CurrentActor][loc2].associatedPresetGroup) 
+                                        if (i != boneIndex && FacialBoneRegions[CurrentActor][i].associatedPresetGroup == FacialBoneRegions[CurrentActor][boneIndex].associatedPresetGroup) 
                                         {
-                                            FacialBoneRegions[CurrentActor][loc6].presetIndex = loc1;
-                                            FacialBoneRegions[CurrentActor][loc6].presetIntensity = loc5;
+                                            FacialBoneRegions[CurrentActor][i].presetIndex = currentIndex;
+                                            FacialBoneRegions[CurrentActor][i].presetIntensity = intensity;
                                         }
-                                        ++loc6;
                                     }
-                                    CurrentFeatureIntensity = loc5;
+                                    CurrentFeatureIntensity = morphIntensity;
                                     UpdateFeatureModifierButtonHint();
                                 }
                                 break;
@@ -1430,6 +1428,16 @@
             }
         }
 
+		internal function PresetMode():*
+        {
+            /*if (eMode == START_MODE) 
+            {
+                eMode = PRESET_MODE;
+                UpdateButtons();
+            }*/
+			root.f4se.plugins.F4EE.SavePreset("Data/F4SE/Plugins/F4EE/Face.json");
+        }
+
         internal function FaceMode():*
         {
             if (this.eMode == this.START_MODE) 
@@ -1489,14 +1497,13 @@
             PreviousMode(true);
         }
 
-        internal function PreviousMode(arg1:Boolean):*
+        internal function PreviousMode(notify:Boolean):*
         {
-            var loc1:*=this.eMode;
-            switch (loc1) 
+            switch (eMode) 
             {
                 case this.SCULPT_MODE:
                 {
-                    if (arg1) 
+                    if (notify) 
                     {
                         this.BGSCodeObj.NotifyForWittyBanter(this.GetBanterFlavor(this.AST_COUNT));
                     }
@@ -1506,12 +1513,12 @@
                 }
                 case this.FEATURE_MODE:
                 {
-                    if (arg1) 
+                    if (notify) 
                     {
                         this.BGSCodeObj.NotifyForWittyBanter(this.GetBanterFlavor(this.eFeature));
                     }
-                    loc1 = this.eFeature;
-                    switch (loc1) 
+                    currentMode = this.eFeature;
+                    switch (eFeature) 
                     {
                         case this.AST_HAIR_COLOR:
                         case this.AST_HAIR:
@@ -1551,20 +1558,21 @@
                     }
                     break;
                 }
-                case this.FEATURE_CATEGORY_MODE:
+                case FEATURE_CATEGORY_MODE:
                 {
                     this.menuMode = this.START_MODE;
                     this.eFeature = this.AST_COUNT;
                     stage.focus = this.PreviousStageFocus;
                     break;
                 }
-                case this.FACE_MODE:
-                case this.HAIR_MODE:
+				case PRESET_MODE:
+                case FACE_MODE:
+                case HAIR_MODE:
                 {
                     this.ShowHairHighlight(false);
                     this.BGSCodeObj.ClearBoneRegionTint();
                 }
-                case this.BODY_MODE:
+                case BODY_MODE:
                 {
                     if (this.BGSCodeObj.EndBodyEdit()) 
                     {
