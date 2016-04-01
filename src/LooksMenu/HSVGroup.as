@@ -1,18 +1,18 @@
 ﻿package 
 {
-    import flash.display.*;
-    import flash.events.*;
-    import flash.geom.*;
-    import flash.ui.*;
+	import flash.display.*;
+	import flash.events.*;
+	import flash.geom.*;
+	import flash.ui.*;
 	import utils.ColorFunctions;
 	import ColorSlider.AlphaTrack;
 	import ColorSlider.ColorTrack;
 	import ColorSlider.SaturationTrack;
 	import ColorSlider.ValueTrack;
 	import Shared.AS3.BSUIComponent;
-    
-    public class HSVGroup extends MovieClip
-    {
+	
+	public class HSVGroup extends MovieClip
+	{
 		public var hSlider: Option_Scrollbar;
 		public var sSlider: Option_Scrollbar;
 		public var vSlider: Option_Scrollbar;
@@ -21,9 +21,9 @@
 		private var _currentColor: Number;
 		private var _alphaValue: Number;
 	
-        public function HSVGroup()
-        {
-            super();
+		public function HSVGroup()
+		{
+			super();
 			hSlider.MinValue = 0;
 			hSlider.MaxValue = 360;
 			hSlider.StepSize = 1;
@@ -44,7 +44,7 @@
 			setColor(0xFF25FF, 0xFF);
 
 			addEventListener(Option_Scrollbar.VALUE_CHANGE, onValueChange);
-        }
+		}
 				
 		public function setColor(a_color: Number, a_alpha: Number)
 		{
@@ -310,5 +310,5 @@
 			trackColor.height = sHeight;
 			aTrack.trackColor = aTrack.addChild(trackColor);
 		}
-    }
+	}
 }
