@@ -19,7 +19,7 @@
 		internal const BodyModeInputMap:Object={"Done":1, "Accept":1, "Cancel":2};
 		internal const SculptModeInputMap:Object={"Done":1, "Accept":1, "Cancel":2, "KeyDown":9, "KeyUp":10, "KeyLeft":7, "KeyRight":8};
 		internal const FeatureModeInputMap:Object={"Done":1, "Accept":1, "Cancel":2, "Space":3, "R":4, "KeyLeft":7, "KeyRight":8};
-		internal const PresetModeInputMap:Object={"Done":0, "Accept":1, "X":2, "Cancel":3};
+		internal const PresetModeInputMap:Object={"Done":0, "Accept":1, "X":2, "YButton":2, "Cancel":3};
 		internal const FeatureCategoryModeInputMap:Object={"Accept":1, "Cancel":2, "R":4};
 		internal const InputMapA:Array=[StartModeInputMapController, FaceHairModeInputMap, BodyModeInputMap, SculptModeInputMap, FaceHairModeInputMap, FeatureModeInputMap, FeatureCategoryModeInputMap, PresetModeInputMap];
 		internal const StartModeFunctionsReleased:Array=[ConfirmCloseMenu, FaceMode, BodyMode, ExtrasMode, ChangeSex, CharacterPresetLeft, CharacterPresetRight, PresetMode, undefined, undefined, undefined, undefined, undefined];
@@ -173,7 +173,7 @@
 		
 		public function LooksMenu()
 		{
-			this.buttonHint_StartMode_BodyPreset = new Shared.AS3.BSButtonHintData("$PRESETS", "R", "PSN_L3", "Xenon_L3", 1, this.PresetMode);
+			this.buttonHint_StartMode_BodyPreset = new Shared.AS3.BSButtonHintData("$PRESETS", "R", "PSN_L1", "Xenon_L1", 1, this.PresetMode);
 			this.buttonHint_StartMode_Face = new Shared.AS3.BSButtonHintData("$FACE", "F", "PSN_A", "Xenon_A", 1, this.FaceMode);
 			this.buttonHint_StartMode_Extras = new Shared.AS3.BSButtonHintData("$EXTRAS", "E", "PSN_X", "Xenon_X", 1, this.ExtrasMode);
 			this.buttonHint_StartMode_Sex = new Shared.AS3.BSButtonHintData("$SEX", "X", "PSN_Y", "Xenon_Y", 1, this.ChangeSex);
@@ -615,13 +615,13 @@
 			this.WeightTriangle_mc.CurrentWeightTick_mc.y = Shared.GlobalFunc.Lerp(0, this.TriangleSize, 0, 1, y, true);
 		}
 
-		public function ProcessUserEvent(control:String, arg2:Boolean):Boolean
+		public function ProcessUserEvent(control:String, keyUp:Boolean):Boolean
 		{
 			var handled: Boolean = false;
 			if (eMode != START_MODE || control != "Cancel" || uiPlatform != Shared.PlatformChangeEvent.PLATFORM_PC_KB_MOUSE) 
 			{
 				var controlId:* = getInput(control);
-				if (!arg2 && !confirmClose && !(InputFunctionsA[eMode][controlId] == null)) 
+				if (!keyUp && !confirmClose && InputFunctionsA[eMode][controlId] != null) 
 				{
 					InputFunctionsA[eMode][controlId]();
 					if (control != "Up" && control != "Down" && control != "Left" && control != "Right") 
@@ -643,7 +643,7 @@
 		public function onKeyDown(event:flash.events.KeyboardEvent):*
 		{			
 			var input = getInput(event.keyCode);
-			if (visible && !confirmClose && !(InputFunctionsA[eMode][input] == null)) 
+			if (visible && !confirmClose && InputFunctionsA[eMode][input] != null) 
 			{
 				InputFunctionsA[eMode][input]();
 			}
@@ -654,15 +654,28 @@
 			var result = null;
 			if (_controlsEnabled) {
 				if (eMode == START_MODE && uiPlatform == Shared.PlatformChangeEvent.PLATFORM_PC_KB_MOUSE) {
-					result = StartModeInputMapKBM[keyCode];
+					try
+					{
+						result = StartModeInputMapKBM[keyCode];
+					}
+					catch(e:Error)
+					{
+						
+					}
 				} else {
-					result = InputMapA[eMode][keyCode];
+					try
+					{
+						result = InputMapA[eMode][keyCode];
+					}
+					catch(e:Error)
+					{
+						
+					}
 				}
 				if (!result) {
 					result = AllModeInputMap[keyCode];
 				}
 			}
-			
 			
 			return result;
 		}

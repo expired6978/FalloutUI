@@ -182,14 +182,14 @@
                   break;
                case PlatformChangeEvent.PLATFORM_PC_GAMEPAD:
                case PlatformChangeEvent.PLATFORM_XB1:
-               case 3:
-                  controllerButtonName = this._buttonHintData.PSNButton;
+                  controllerButtonName = this._buttonHintData.XenonButton;
                   break;
                case PlatformChangeEvent.PLATFORM_PS4:
-                  controllerButtonName = "";
+                  controllerButtonName = this._buttonHintData.PSNButton;
                   break;
                default:
-                  controllerButtonName = this._buttonHintData.XenonButton;
+                  controllerButtonName = "";
+                  break;
             }
             if(NameToTextMap.hasOwnProperty(controllerButtonName))
             {
@@ -217,14 +217,14 @@
                      break;
                   case PlatformChangeEvent.PLATFORM_PC_GAMEPAD:
                   case PlatformChangeEvent.PLATFORM_XB1:
-                  case 3:
-                     controllerButtonName = this._buttonHintData.SecondaryPSNButton;
+                     controllerButtonName = this._buttonHintData.SecondaryXenonButton;
                      break;
                   case PlatformChangeEvent.PLATFORM_PS4:
-                     controllerButtonName = "";
+                     controllerButtonName = this._buttonHintData.SecondaryPSNButton;
                      break;
                   default:
-                     controllerButtonName = this._buttonHintData.SecondaryXenonButton;
+                     controllerButtonName = "";
+                     break;
                }
                if(NameToTextMap.hasOwnProperty(controllerButtonName))
                {
