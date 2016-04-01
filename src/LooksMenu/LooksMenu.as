@@ -6,19 +6,22 @@
     import flash.display.*;
     import flash.events.*;
 	import flash.geom.*;
+	import flash.text.*;
+	import flash.ui.*;
     import scaleform.gfx.*;
 	import utils.Debug;
     
     public dynamic class LooksMenu extends Shared.IMenu
     {
 		internal const AllModeInputMap:Object={"Done":0, "Accept":1, "Cancel":2, "XButton":3, "YButton":4, "LTrigger":5, "RTrigger":6, "LShoulder":7, "RShoulder":8, "Left":9, "Right":10, "Up":11, "Down":12};
-        internal const StartModeInputMapKBM:Object={"Done":0, "F":1, "B":2, "Accept":3, "X":4, "KeyLeft":5, "KeyRight":6};
-        internal const FaceHairModeInputMap:Object={"Done":0, "KeyDown":1, "Cancel":2, "T":3, "C":4};
+        internal const StartModeInputMapKBM:Object={"Done":0, "F":1, "B":2, "Accept":3, "X":4, "KeyLeft":5, "KeyRight":6, "R":7};
+        internal const FaceHairModeInputMap:Object={"Done":0, "Accept":1, "Cancel":2, "T":3, "C":4};
         internal const BodyModeInputMap:Object={"Done":1, "Accept":1, "Cancel":2};
         internal const SculptModeInputMap:Object={"Done":1, "Accept":1, "Cancel":2, "KeyDown":9, "KeyUp":10, "KeyLeft":7, "KeyRight":8};
         internal const FeatureModeInputMap:Object={"Done":1, "Accept":1, "Cancel":2, "Space":3, "R":4, "KeyLeft":7, "KeyRight":8};
+		internal const PresetModeInputMap:Object={"Done":0, "Accept":1, "X":2, "Cancel":3};
         internal const FeatureCategoryModeInputMap:Object={"Accept":1, "Cancel":2, "R":4};
-        internal const InputMapA:Array=[this.StartModeInputMapController, this.FaceHairModeInputMap, this.BodyModeInputMap, this.SculptModeInputMap, this.FaceHairModeInputMap, this.FeatureModeInputMap, this.FeatureCategoryModeInputMap];
+        internal const InputMapA:Array=[StartModeInputMapController, FaceHairModeInputMap, BodyModeInputMap, SculptModeInputMap, FaceHairModeInputMap, FeatureModeInputMap, FeatureCategoryModeInputMap, PresetModeInputMap];
         internal const StartModeFunctionsReleased:Array=[ConfirmCloseMenu, FaceMode, BodyMode, ExtrasMode, ChangeSex, CharacterPresetLeft, CharacterPresetRight, PresetMode, undefined, undefined, undefined, undefined, undefined];
         internal const FaceModeFunctionsReleased:Array=[ConfirmCloseMenu, SculptMode, StartMode, TypeMode, ColorMode, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined];
         internal const BodyModeFunctionsReleased:Array=[undefined, AcceptChanges, CancelChanges, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined];
@@ -26,7 +29,8 @@
         internal const HairModeFunctionsReleased:Array=[ConfirmCloseMenu, StyleMode, StartMode, TypeMode, ColorMode, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined];
         internal const FeatureModeFunctionsReleased:Array=[undefined, undefined, CancelChanges, FeaturesApply, undefined, undefined, undefined, FeatureModeLBumper, FeatureModeRBumper, undefined, undefined, undefined, undefined];
         internal const FeatureCategoryModeFunctionsReleased:Array=[undefined, undefined, StartMode, undefined, FeaturesClear, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined];
-        internal const InputFunctionsA:Array=[StartModeFunctionsReleased, FaceModeFunctionsReleased, BodyModeFunctionsReleased, SculptModeFunctionsReleased, HairModeFunctionsReleased, FeatureModeFunctionsReleased, FeatureCategoryModeFunctionsReleased];
+        internal const PresetModeFunctionsReleased:Array=[ConfirmCloseMenu, PresetLoad, PresetSave, StartMode];
+        internal const InputFunctionsA:Array=[StartModeFunctionsReleased, FaceModeFunctionsReleased, BodyModeFunctionsReleased, SculptModeFunctionsReleased, HairModeFunctionsReleased, FeatureModeFunctionsReleased, FeatureCategoryModeFunctionsReleased, PresetModeFunctionsReleased];
         internal const StartModeInputMapController:Object={"Done":0, "Accept":1, "B":2, "XButton":3, "YButton":4, "KeyLeft":5, "KeyRight":6};
         internal const FeatureIntensityStep:Number=0.01;
         internal const FeatureIntensityRampDurationCeiling:Number=3;
@@ -66,6 +70,7 @@
         internal const FEATURE_MODE:uint=5;
         internal const FEATURE_CATEGORY_MODE:uint=6;
 		internal const PRESET_MODE:uint=7;
+		internal const PRESET_NAME_MODE:uint=8;
         internal const AST_HAIR:uint=0;
         internal const AST_HAIR_COLOR:uint=1;
         internal const AST_BEARD:uint=2;
@@ -74,6 +79,7 @@
         internal const AST_COLOR:uint=5;
         internal const AST_MORPHS:uint=6;
         internal const AST_COUNT:uint=7;
+		internal const AST_PRESET:uint=8;
         internal const UNDO_WEIGHT:uint=0;
         internal const UNDO_SCULPT:uint=1;
         internal const UNDO_HAIRCOLOR:uint=2;
@@ -119,6 +125,7 @@
         public var LoadingSpinner_mc:flash.display.MovieClip;
         public var ButtonHintBar_mc:flash.display.MovieClip;
         public var WeightTriangle_mc:flash.display.MovieClip;
+		public var PresetInput_mc:flash.display.MovieClip;
         protected var buttonHint_StartMode_Done:Shared.AS3.BSButtonHintData;
         protected var buttonHint_FeatureCategoryMode_Back:Shared.AS3.BSButtonHintData;
         protected var buttonHint_FeatureCategoryMode_Select:Shared.AS3.BSButtonHintData;
@@ -154,19 +161,25 @@
         protected var buttonHint_FaceMode_Type:Shared.AS3.BSButtonHintData;
         protected var buttonHint_HairMode_Style:Shared.AS3.BSButtonHintData;
         protected var buttonHint_FaceMode_Sculpt:Shared.AS3.BSButtonHintData;
-        internal var CurrentSelectedExtra:uint=0;
-		
+		protected var buttonHint_PresetMode_Load:Shared.AS3.BSButtonHintData;
+		protected var buttonHint_PresetMode_Save:Shared.AS3.BSButtonHintData;
+		protected var buttonHint_PresetMode_Back:Shared.AS3.BSButtonHintData;
+		protected var buttonHint_PresetName_Done:Shared.AS3.BSButtonHintData;
+		protected var buttonHint_PresetName_Cancel:Shared.AS3.BSButtonHintData;
+        internal var CurrentSelectedExtra:uint=0;		
 		public static var GlobalTintColors:Array=[1.0, 0.0, 1.0, 1.0];
+		internal var CurrentSelectedBoneID:uint=4294967295;
+		internal var buttonStatesV:__AS3__.vec.Vector.<Boolean>;
 		
         public function LooksMenu()
         {
-			this.buttonHint_StartMode_BodyPreset = new Shared.AS3.BSButtonHintData("$PRESET", "F5", "PSN_L3", "Xenon_L3", 1, this.PresetMode);
+			this.buttonHint_StartMode_BodyPreset = new Shared.AS3.BSButtonHintData("$PRESETS", "R", "PSN_L3", "Xenon_L3", 1, this.PresetMode);
             this.buttonHint_StartMode_Face = new Shared.AS3.BSButtonHintData("$FACE", "F", "PSN_A", "Xenon_A", 1, this.FaceMode);
             this.buttonHint_StartMode_Extras = new Shared.AS3.BSButtonHintData("$EXTRAS", "E", "PSN_X", "Xenon_X", 1, this.ExtrasMode);
             this.buttonHint_StartMode_Sex = new Shared.AS3.BSButtonHintData("$SEX", "X", "PSN_Y", "Xenon_Y", 1, this.ChangeSex);
             this.buttonHint_StartMode_Body = new Shared.AS3.BSButtonHintData("$BODY", "B", "PSN_B", "Xenon_B", 1, this.BodyMode);
             this.buttonHint_StartMode_Preset = new Shared.AS3.BSButtonHintData("$$FACE 01", "A", "PSN_L2", "Xenon_L2", 1, this.CharacterPresetRight);
-            this.buttonHint_FaceMode_Sculpt = new Shared.AS3.BSButtonHintData("$SCULPT", "S", "PSN_A", "Xenon_A", 1, this.SculptMode);
+            this.buttonHint_FaceMode_Sculpt = new Shared.AS3.BSButtonHintData("$SCULPT", "E", "PSN_A", "Xenon_A", 1, this.SculptMode);
             this.buttonHint_HairMode_Style = new Shared.AS3.BSButtonHintData("$STYLE", "S", "PSN_A", "Xenon_A", 1, this.StyleMode);
             this.buttonHint_FaceMode_Type = new Shared.AS3.BSButtonHintData("$TYPE", "T", "PSN_X", "Xenon_X", 1, this.TypeMode);
             this.buttonHint_FaceMode_Color = new Shared.AS3.BSButtonHintData("$COLOR", "C", "PSN_Y", "Xenon_Y", 1, this.ColorMode);
@@ -183,6 +196,11 @@
             this.buttonHint_FeatureCategoryMode_Select = new Shared.AS3.BSButtonHintData("$SELECT", "E", "PSN_A", "Xenon_A", 1, this.SelectCategory);
             this.buttonHint_FeatureCategoryMode_Back = new Shared.AS3.BSButtonHintData("$BACK", "Esc", "PSN_B", "Xenon_B", 1, this.PreviousMode);
             this.buttonHint_StartMode_Done = new Shared.AS3.BSButtonHintData("$DONE", "Enter", "PSN_Start", "Xenon_Start", 1, this.ConfirmCloseMenu);
+			this.buttonHint_PresetMode_Load = new Shared.AS3.BSButtonHintData("$LOAD", "E", "PSN_A", "Xenon_A", 1, this.PresetLoad);
+			this.buttonHint_PresetMode_Save = new Shared.AS3.BSButtonHintData("$SAVE", "X", "PSN_Y", "Xenon_Y", 1, this.PresetSave);
+			this.buttonHint_PresetMode_Back = new Shared.AS3.BSButtonHintData("$BACK", "Esc", "PSN_B", "Xenon_B", 1, this.StartMode);
+			this.buttonHint_PresetName_Done = new Shared.AS3.BSButtonHintData("$DONE", "Enter", "PSN_Start", "Xenon_Start", 1, this.PresetNameConfirm);
+			this.buttonHint_PresetName_Cancel = new Shared.AS3.BSButtonHintData("$CANCEL", "Esc", "PSN_B", "Xenon_B", 1, this.PresetNameCancel);
             this.FacialBoneRegions = new Array();
             this.ControlAxes = [this.X_AXIS, this.Y_AXIS, this.X_ROT_AXIS, this.X_SCALE_AXIS, this.Z_AXIS];
             super();
@@ -226,6 +244,11 @@
             this._buttonHintDataV.push(this.buttonHint_EditAccept);
             this._buttonHintDataV.push(this.buttonHint_FeatureMode_Apply);
             this._buttonHintDataV.push(this.buttonHint_EditCancel);
+			this._buttonHintDataV.push(this.buttonHint_PresetMode_Load);
+			this._buttonHintDataV.push(this.buttonHint_PresetMode_Save);
+			this._buttonHintDataV.push(this.buttonHint_PresetMode_Back);
+			this._buttonHintDataV.push(this.buttonHint_PresetName_Done);
+			this._buttonHintDataV.push(this.buttonHint_PresetName_Cancel);
             this._buttonHintDataV.push(this.buttonHint_StartMode_Done);
             this._buttonHintDataV.push(this.buttonHint_FeatureCategoryMode_Select);
             this._buttonHintDataV.push(this.buttonHint_FeatureCategoryMode_RemoveAll);
@@ -233,8 +256,7 @@
             this.ButtonHintBar_mc.SetButtonHintData(this._buttonHintDataV);
             this.UpdateButtons();
             this.bInitialized = true;
-            this.__setProp_ButtonHintBar_mc_LooksMenuBase_Shared_0();
-			trace("Loaded LooksMenu");
+			PresetInput_mc.visible = PresetInput_mc.enabled = false;
 			root.addEventListener("F4SE::Initialized", onF4SEInitialized);
         }
 				
@@ -263,34 +285,46 @@
 		
 		public function onApplyColorChange(r, g, b, multiplier): Array
 		{
+			return [r,g,b,multiplier];
+			
 			var rint:uint = r * 255;
 			var gint:uint = g * 255;
 			var bint:uint = b * 255;
 			var mint:uint = multiplier * 255;
 			try 
             {
-				WeightTriangle_mc.CurrentWeightTick_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
-				WeightTriangle_mc.Triangle_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
-                LoadingSpinner_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, 0);
-       			ButtonHintBar_mc.ButtonBracket_Left_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
-				ButtonHintBar_mc.ButtonBracket_Right_mc.transform.colorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
+				var ct: ColorTransform = new ColorTransform(0.0, 0.0, 0.0, 1.0, rint, gint, bint, mint);
+				
+				WeightTriangle_mc.CurrentWeightTick_mc.transform.colorTransform = ct;
+				WeightTriangle_mc.Triangle_mc.transform.colorTransform = ct;
+                LoadingSpinner_mc.transform.colorTransform = ct;
+       			ButtonHintBar_mc.ButtonBracket_Left_mc.transform.colorTransform = ct;
+				ButtonHintBar_mc.ButtonBracket_Right_mc.transform.colorTransform = ct;
+				Cursor_mc.transform.colorTransform = ct;
+				
+				FeaturePanel_mc.Brackets_mc.UpperRightCorner_mc.colorTransform = ct;
+				FeaturePanel_mc.Brackets_mc.UpperHorizontalLine_mc.colorTransform = ct;
+				FeaturePanel_mc.Brackets_mc.UpperLeftCorner_mc.colorTransform = ct;
+				FeaturePanel_mc.Brackets_mc.LowerBracket_mc.colorTransform = ct;
+				
+				FeaturePanel_mc.List_mc.ScrollUp.colorTransform = ct;
+				FeaturePanel_mc.List_mc.ScrollDown.colorTransform = ct;
 				
 				var textColor: uint = (mint << 24) | (rint << 16) | (gint << 8) | bint;
 				FacePartLabel_tf.textColor = textColor;
 				WeightTriangle_mc.Large_tf.textColor = textColor;
 				WeightTriangle_mc.Thin_tf.textColor = textColor;
 				WeightTriangle_mc.Muscular_tf.textColor = textColor;
+				FeaturePanel_mc.Brackets_mc.Label_tf.textColor = textColor;
 				
-				trace(ButtonHintBar_mc.ButtonPoolV.length);
 				for(var i = 0; i < ButtonHintBar_mc.ButtonPoolV.length; i++)
 				{
-					trace(ButtonHintBar_mc.ButtonPoolV[i]);
-					trace(ButtonHintBar_mc.ButtonPoolV[i].textField_tf);
-					trace(ButtonHintBar_mc.ButtonPoolV[i].IconHolderInstance.IconAnimInstance.Icon_tf);
-					trace(ButtonHintBar_mc.ButtonPoolV[i].SecondaryIconHolderInstance.IconAnimInstance.Icon_tf);
 					ButtonHintBar_mc.ButtonPoolV[i].textField_tf.textColor = textColor;
             		ButtonHintBar_mc.ButtonPoolV[i].IconHolderInstance.IconAnimInstance.Icon_tf.textColor = textColor;
             		ButtonHintBar_mc.ButtonPoolV[i].SecondaryIconHolderInstance.IconAnimInstance.Icon_tf.textColor = textColor;
+					if(ButtonHintBar_mc.ButtonPoolV[i].DynamicMovieClip) {
+						ButtonHintBar_mc.ButtonPoolV[i].DynamicMovieClip.transform.colorTransform = ct;
+					}
 				}
             }
             catch (e:Error)
@@ -304,14 +338,14 @@
 		public function onF4SEInitialized(event:flash.events.Event)
 		{
 			trace("F4SE Initialized.");
-			try 
+			/*try 
             {
 				utils.Debug.dump("LooksMenu", this.FeaturePanel_mc, false, 0, root.f4se.GetMembers);
 			}
 			catch(e:Error)
 			{
 				trace("Failed to dump");
-			};
+			};*/
 		}
 
         public function set isFemale(arg1:*):*
@@ -351,13 +385,13 @@
             var loc4:*=undefined;
             var loc1:*=this.GetBoneRegionIndexFromCurrentID();
             var loc2:*=this.eMode == this.SCULPT_MODE || this.eMode == this.FEATURE_MODE;
-			this.buttonHint_StartMode_BodyPreset.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && this.EditMode == this.EDIT_CHARGEN;
+			this.buttonHint_StartMode_BodyPreset.ButtonVisible = bInitialized && eMode == START_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD);
             this.buttonHint_StartMode_Preset.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && this.EditMode == this.EDIT_CHARGEN;
             this.buttonHint_StartMode_Face.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
             this.buttonHint_StartMode_Extras.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
             this.buttonHint_StartMode_Sex.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && this.EditMode == this.EDIT_CHARGEN && this.AllowChangeSex;
             this.buttonHint_StartMode_Body.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
-            this.buttonHint_StartMode_Done.ButtonVisible = this.bInitialized && (this.eMode == this.START_MODE || this.eMode == this.HAIR_MODE && this.EditMode == this.EDIT_HAIRCUT);
+            this.buttonHint_StartMode_Done.ButtonVisible = bInitialized && (eMode == START_MODE || (eMode == HAIR_MODE && EditMode == EDIT_HAIRCUT) || eMode == PRESET_MODE);
             this.buttonHint_FaceMode_Sculpt.ButtonVisible = this.eMode == this.FACE_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
             this.buttonHint_HairMode_Style.ButtonVisible = this.eMode == this.HAIR_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_HAIRCUT);
             this.buttonHint_FaceMode_Type.ButtonVisible = this.eMode == this.FACE_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD) || this.eMode == this.HAIR_MODE && this.EditMode == this.EDIT_HAIRCUT && !this._bisFemale;
@@ -374,48 +408,56 @@
             this.buttonHint_FeatureCategoryMode_RemoveAll.ButtonVisible = this.eMode == this.FEATURE_CATEGORY_MODE;
             this.buttonHint_FeatureCategoryMode_Select.ButtonVisible = this.eMode == this.FEATURE_CATEGORY_MODE;
             this.buttonHint_FeatureCategoryMode_Back.ButtonVisible = this.eMode == this.FEATURE_CATEGORY_MODE;
-            this.Cursor_mc.visible = !this._loading && !(this.EditMode == this.EDIT_HAIRCUT) && (this.eMode == this.FACE_MODE || this.eMode == this.HAIR_MODE);
-            this.LoadingSpinner_mc.alpha = this._loading ? 1 : 0;
-            this.FacePartLabel_tf.alpha = !(this.EditMode == this.EDIT_HAIRCUT) && !(this.eMode == this.START_MODE) && !(this.eMode == this.BODY_MODE) && !(this.eMode == this.FEATURE_CATEGORY_MODE) && (!(this.eMode == this.FEATURE_MODE) || !(this.eFeature == this.AST_EXTRAS));
-            this.WeightTriangle_mc.alpha = this.eMode != this.BODY_MODE ? 0 : 1;
-            this.FeaturePanel_mc.visible = this.eMode == this.FEATURE_MODE || this.eMode == this.FEATURE_CATEGORY_MODE;
-            this.FeaturePanel_mc.Brackets_mc.BracketExtents_mc.visible = this.eMode == this.FEATURE_MODE || this.eMode == this.FEATURE_CATEGORY_MODE;
+			this.buttonHint_PresetMode_Load.ButtonVisible = bInitialized && eMode == PRESET_MODE;
+			this.buttonHint_PresetMode_Save.ButtonVisible = bInitialized && eMode == PRESET_MODE;
+			this.buttonHint_PresetMode_Back.ButtonVisible = bInitialized && eMode == PRESET_MODE;
+			this.buttonHint_PresetName_Done.ButtonVisible = bInitialized && eMode == PRESET_NAME_MODE;
+			this.buttonHint_PresetName_Cancel.ButtonVisible = bInitialized && eMode == PRESET_NAME_MODE;
+			PresetInput_mc.visible = PresetInput_mc.enabled = eMode == PRESET_NAME_MODE;
+			
+			var bHitPanel = FeaturePanel_mc.hitTestPoint(Cursor_mc.x, Cursor_mc.y);
+            Cursor_mc.visible = !_loading && EditMode != EDIT_HAIRCUT && (eMode == FACE_MODE || eMode == HAIR_MODE) && !bHitPanel;
+            LoadingSpinner_mc.alpha = _loading ? 1 : 0;
+            FacePartLabel_tf.alpha = EditMode != EDIT_HAIRCUT && eMode != START_MODE && eMode != BODY_MODE && eMode != FEATURE_CATEGORY_MODE && (eMode != FEATURE_MODE || eFeature != AST_EXTRAS);
+            WeightTriangle_mc.alpha = eMode != BODY_MODE ? 0 : 1;
+            FeaturePanel_mc.visible = eMode == FEATURE_MODE || eMode == FEATURE_CATEGORY_MODE || eMode == PRESET_MODE || eMode == FACE_MODE;
+            FeaturePanel_mc.Brackets_mc.BracketExtents_mc.visible = eMode == FEATURE_MODE || eMode == FEATURE_CATEGORY_MODE || eMode == PRESET_MODE || eMode == FACE_MODE;
             var loc5:*=this.eMode;
             switch (loc5) 
             {
-                case this.START_MODE:
+                case START_MODE:
                 {
                     loc3 = this.bInitialized ? this.BGSCodeObj.GetLastCharacterPreset() : 0;
                     this.buttonHint_StartMode_Preset.ButtonText = "$$FACE " + (loc3 < 9 ? "0" : "") + (loc3 + 1).toString();
                     break;
                 }
-                case this.FACE_MODE:
+                case FACE_MODE:
                 {
-                    this.eFeature = this.AST_COUNT;
-					loc4 = this.CurrentBoneID;
-                    if (loc4 < uint.MAX_VALUE) 
+                    eFeature = AST_COUNT;
+					loc4 = CurrentBoneID;
+                    if (loc4 < uint.MAX_VALUE)
                     {
-                        if (this.FacialBoneRegions[this.CurrentActor][loc1].headPart != this.HeadPartFacialHair) 
+                        if (FacialBoneRegions[CurrentActor][loc1].headPart != HeadPartFacialHair) 
                         {
-                            if (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD) 
+                            if (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD) 
                             {
-                                if (this.FacialBoneRegions[this.CurrentActor][loc1].associatedPresetGroup == null) 
+                                if (FacialBoneRegions[CurrentActor][loc1].associatedPresetGroup == null) 
                                 {
-                                    this.buttonHint_FaceMode_Type.ButtonEnabled = false;
+                                    buttonHint_FaceMode_Type.ButtonEnabled = false;
                                 }
                                 else 
                                 {
-                                    this.buttonHint_FaceMode_Type.ButtonText = "$TYPE";
-                                    this.buttonHint_FaceMode_Type.ButtonEnabled = true;
+                                    buttonHint_FaceMode_Type.ButtonText = "$TYPE";
+                                    buttonHint_FaceMode_Type.ButtonEnabled = true;
                                 }
-                                this.buttonHint_FaceMode_Type.ButtonVisible = true;
+                                buttonHint_FaceMode_Type.ButtonVisible = true;
                             }
                             else 
                             {
-                                this.buttonHint_FaceMode_Type.ButtonVisible = false;
+                                buttonHint_FaceMode_Type.ButtonVisible = false;
                             }
                         }
-                        else if (this.EditMode != this.EDIT_CHARGEN) 
+                        else if (EditMode != EDIT_CHARGEN) 
                         {
                             this.buttonHint_FaceMode_Type.ButtonVisible = false;
                         }
@@ -426,7 +468,7 @@
                             this.buttonHint_FaceMode_Type.ButtonVisible = true;
                         }
                     }
-                    else if (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD) 
+                    else if (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD) 
                     {
                         this.buttonHint_FaceMode_Type.ButtonText = "$TYPE";
                         this.buttonHint_FaceMode_Type.ButtonEnabled = false;
@@ -453,7 +495,7 @@
                     }
                     break;
                 }
-                case this.HAIR_MODE:
+                case HAIR_MODE:
                 {
                     this.eFeature = this.AST_HAIR;
                     if (this.EditMode == this.EDIT_HAIRCUT) 
@@ -468,41 +510,52 @@
                     Shared.GlobalFunc.SetText(this.FacePartLabel_tf, "$HAIR", false, true);
                     break;
                 }
-                case this.BODY_MODE:
+				case PRESET_MODE:
+                {
+					FacePartLabel_tf.visible = false;
+					FacePartLabel_tf.alpha = 0;
+                    break;
+                }
+                case BODY_MODE:
                 {
                     break;
                 }
-                case this.SCULPT_MODE:
+                case SCULPT_MODE:
                 {
-                    Shared.GlobalFunc.SetText(this.FacePartLabel_tf, this.FacialBoneRegions[this.CurrentActor][loc1].name, false, true);
+                    Shared.GlobalFunc.SetText(FacePartLabel_tf, FacialBoneRegions[CurrentActor][loc1].name, false, true);
                     break;
                 }
-                case this.FEATURE_CATEGORY_MODE:
+                case FEATURE_CATEGORY_MODE:
                 {
-                    this.buttonHint_FeatureCategoryMode_RemoveAll.ButtonEnabled = this.BGSCodeObj.GetHasDetailsApplied();
+                    buttonHint_FeatureCategoryMode_RemoveAll.ButtonEnabled = BGSCodeObj.GetHasDetailsApplied();
                     break;
                 }
-                case this.FEATURE_MODE:
+                case FEATURE_MODE:
                 {
-                    if (this.eFeature == this.AST_BEARD) 
+                    if (eFeature == AST_BEARD) 
                     {
-                        Shared.GlobalFunc.SetText(this.FacePartLabel_tf, "$FACIAL HAIR", false, true);
+                        Shared.GlobalFunc.SetText(FacePartLabel_tf, "$FACIAL HAIR", false, true);
                     }
                     break;
                 }
             }
-            if (this.bInitialized) 
+            if (bInitialized) 
             {
-                this.BGSCodeObj.SetSculptMode(this.eMode == this.SCULPT_MODE);
-                this.BGSCodeObj.SetFeatureMode(this.eMode == this.FEATURE_MODE);
-                this.BGSCodeObj.SetBumpersRepeat(loc2);
+                BGSCodeObj.SetSculptMode(eMode == SCULPT_MODE);
+                BGSCodeObj.SetFeatureMode(eMode == FEATURE_MODE);
+                BGSCodeObj.SetBumpersRepeat(loc2);
             }
         }
 
-        public function set currentBoneRegionID(arg1:uint):*
-        {
-            this.CurrentBoneID = arg1;
-            this.UpdateButtons();
+        public function set currentBoneRegionID(id:uint):*
+        {			
+            CurrentBoneID = id;
+            UpdateButtons();
+			
+			if(FeaturePanel_mc.visible && eMode == FACE_MODE && id < uint.MAX_VALUE) {
+				CurrentSelectedBoneID = id;
+				FeaturePanel_mc.List_mc.selectedIndex = GetBoneRegionIndexFromCurrentID();
+			}
         }
 
         public function get menuMode():uint
@@ -530,12 +583,18 @@
             this.UpdateButtons();
         }
 
-        public function SetCursorPosition(arg1:Number, arg2:Number):*
+        public function SetCursorPosition(cursorX:Number, cursorY:Number):*
         {
-            this.Cursor_mc.x = arg1 * 1280;
-            this.Cursor_mc.y = arg2 * 720;
-            this.LoadingSpinner_mc.x = this.Cursor_mc.x;
-            this.LoadingSpinner_mc.y = this.Cursor_mc.y;
+            Cursor_mc.x = cursorX * 1280;
+            Cursor_mc.y = cursorY * 720;
+            LoadingSpinner_mc.x = Cursor_mc.x;
+            LoadingSpinner_mc.y = Cursor_mc.y;
+			
+			var bHitPanel = FeaturePanel_mc.hitTestPoint(Cursor_mc.x, Cursor_mc.y);
+			if(eMode == FACE_MODE)
+			{
+				Cursor_mc.visible = ShouldMoveCursor() && !bHitPanel;
+			}
         }
 
         internal function onWeightTriangleChange(event:flash.events.MouseEvent):void
@@ -559,19 +618,19 @@
         public function ProcessUserEvent(control:String, arg2:Boolean):Boolean
         {
             var handled: Boolean = false;
-            if (!(eMode == START_MODE) || !(control == "Cancel") || !(uiPlatform == Shared.PlatformChangeEvent.PLATFORM_PC_KB_MOUSE)) 
+            if (eMode != START_MODE || control != "Cancel" || uiPlatform != Shared.PlatformChangeEvent.PLATFORM_PC_KB_MOUSE) 
             {
 				var controlId:* = getInput(control);
                 if (!arg2 && !confirmClose && !(InputFunctionsA[eMode][controlId] == null)) 
                 {
                     InputFunctionsA[eMode][controlId]();
-                    if (!(control == "Up") && !(control == "Down") && !(control == "Left") && !(control == "Right")) 
+                    if (control != "Up" && control != "Down" && control != "Left" && control != "Right") 
                     {
                         handled = true;
                     }
                     if (control == "Accept") 
                     {
-                        if (eMode == this.FEATURE_MODE || eMode == this.FEATURE_CATEGORY_MODE) 
+                        if (eMode == FEATURE_MODE || eMode == FEATURE_CATEGORY_MODE || eMode == PRESET_MODE)
                         {
                             BlockNextAccept = true;
                         }
@@ -582,14 +641,14 @@
         }
 
         public function onKeyDown(event:flash.events.KeyboardEvent):*
-        {
+        {			
 			var input = getInput(event.keyCode);
             if (visible && !confirmClose && !(InputFunctionsA[eMode][input] == null)) 
             {
                 InputFunctionsA[eMode][input]();
             }
         }
-
+		
         internal function getInput(keyCode: String):*
         {
             var result = null;
@@ -603,6 +662,7 @@
                     result = AllModeInputMap[keyCode];
                 }
             }
+			
 			
             return result;
         }
@@ -656,6 +716,21 @@
                 }
             }
         }
+		
+		internal function SetNoContextBoneID()
+		{
+			if(CurrentSelectedBoneID < uint.MAX_VALUE)
+			{
+				try
+				{
+					root.f4se.plugins.F4EE.SetCurrentBoneRegionID(CurrentSelectedBoneID, CurrentSelectedBoneID); // Temporary hack, leaving the face area with the cursor causes the boneID to be lost internally
+				}
+				catch(e:Error)
+				{
+					trace("Failed to change internal boneID");
+				}
+			}
+		}
 
         internal function FeatureMode(a_feature:uint):*
         {
@@ -695,6 +770,7 @@
                 }
                 case AST_COLOR:
                 {
+					SetNoContextBoneID(); // Temporary hack, leaving the face area with the cursor causes the boneID to be lost internally
                     var region = FacialBoneRegions[CurrentActor][boneIndex].headPart;
                     Shared.GlobalFunc.SetText(FacePartLabel_tf, region != HeadPartEyes ? "$SKIN TONE" : "$EYE COLOR", false);
                     BGSCodeObj.CreateUndoPoint(UNDO_COLOR, CurrentBoneID);
@@ -704,6 +780,7 @@
                 }
                 case AST_EYES:
                 {
+					SetNoContextBoneID(); // Temporary hack, leaving the face area with the cursor causes the boneID to be lost internally
                     Shared.GlobalFunc.SetText(FacePartLabel_tf, "$EYE COLOR", false);
                     BGSCodeObj.CreateUndoPoint(UNDO_COLOR, CurrentBoneID);
                     panelTitle = "$COLOR";
@@ -733,7 +810,8 @@
                     break;
                 }
                 case AST_MORPHS:
-                {
+                {					
+					SetNoContextBoneID(); // Temporary hack, leaving the face area with the cursor causes the boneID to be lost internally
                     BGSCodeObj.CreateUndoPoint(UNDO_MORPHS);
                     CurrentFeatureIntensity = FacialBoneRegions[CurrentActor][boneIndex].presetIntensity;
                     AppliedMorphIndex = featureData;
@@ -805,17 +883,15 @@
 
         internal function onFeatureSelectionChange():*
         {
-            var currentIndex:*=0;
             if (FeatureListChangeLock == 0) 
             {
-                currentIndex = FeaturePanel_mc.List_mc.selectedIndex;
+                var currentIndex = FeaturePanel_mc.List_mc.selectedIndex;
                 if (eMode != FEATURE_CATEGORY_MODE) 
                 {
                     if (eMode == FEATURE_MODE) 
                     {
                         CurrentFeatureIntensity = 0;
                         CurrentExtraNumColors = 0;
-						trace("onFeatureSelectionChange: " + currentIndex + " Mode: " + eMode + " Feature: " + eFeature);
                         switch (eFeature) 
                         {
                             case AST_HAIR:
@@ -836,7 +912,7 @@
                             case AST_EYES:
                             case AST_COLOR:
                             {
-								trace("AST_COLOR: group: " + CurrentExtraGroup + " selected: " + currentIndex);
+								SetNoContextBoneID(); // Temporary hack, leaving the face area with the cursor causes the boneID to be lost internally
                                 BGSCodeObj.ChangeColor(currentIndex);
                                 break;
                             }
@@ -856,28 +932,29 @@
                                 }
                                 CurrentExtraNumColors = BGSCodeObj.GetDetailColorCount(CurrentExtraGroup, CurrentSelectedExtra);
                                 CurrentExtraColor = BGSCodeObj.GetDetailColor(CurrentExtraGroup, CurrentSelectedExtra);
-								trace("AST_EXTRAS: group: " + CurrentExtraGroup + " selected: " + CurrentSelectedExtra + " intensity: " + CurrentFeatureIntensity + " numColors: " + CurrentExtraNumColors + " color: " + CurrentExtraColor);
-                                UpdateFeatureModifierButtonHint();
+								UpdateFeatureModifierButtonHint();
                                 break;
                             }
                             case AST_MORPHS:
                             {
                                 var boneIndex:uint = GetBoneRegionIndexFromCurrentID();
                                 var presetCount = FacialBoneRegions[CurrentActor][boneIndex].presetCount;
-                                if (FacialBoneRegions[CurrentActor][boneIndex].presetIndex != currentIndex) 
+								if (FacialBoneRegions[CurrentActor][boneIndex].presetIndex != currentIndex) 
                                 {
+									SetNoContextBoneID(); // Temporary hack, leaving the face area with the cursor causes the boneID to be lost internally
                                     BGSCodeObj.ChangePreset(CurrentBoneID, uint(currentIndex));
                                     FacialBoneRegions[CurrentActor][boneIndex].presetIndex = currentIndex;
                                     var morphIntensity: Number = currentIndex != AppliedMorphIndex ? FacialBoneRegions[CurrentActor][boneIndex].presetsSupportIntensity ? currentIndex ? 1 : -1 : -1 : AppliedMorphIntensity;
-                                    FacialBoneRegions[CurrentActor][boneIndex].presetIntensity = intensity;
-                                    BGSCodeObj.NotifyForWittyBanter(GetBanterFlavor(AST_COUNT));
+									FacialBoneRegions[CurrentActor][boneIndex].presetIntensity = morphIntensity;
+									var banterFlavor = GetBanterFlavor(AST_COUNT);
+                                    BGSCodeObj.NotifyForWittyBanter(banterFlavor);
                                     dirty = true;
                                     for(var i = 0; i < FacialBoneRegions[CurrentActor].length; i++)
                                     {
                                         if (i != boneIndex && FacialBoneRegions[CurrentActor][i].associatedPresetGroup == FacialBoneRegions[CurrentActor][boneIndex].associatedPresetGroup) 
                                         {
                                             FacialBoneRegions[CurrentActor][i].presetIndex = currentIndex;
-                                            FacialBoneRegions[CurrentActor][i].presetIntensity = intensity;
+                                            FacialBoneRegions[CurrentActor][i].presetIntensity = morphIntensity;
                                         }
                                     }
                                     CurrentFeatureIntensity = morphIntensity;
@@ -887,6 +964,16 @@
                             }
                         }
                     }
+					else if(eMode == FACE_MODE)
+					{
+						BGSCodeObj.ClearBoneRegionTint();
+						ShowHairHighlight(false);
+						var currentBone = FeaturePanel_mc.List_mc.entryList[currentIndex].regionID;
+						CurrentBoneID = currentBone;
+						CurrentSelectedBoneID = currentBone;
+						BGSCodeObj.HighlightBoneRegion(CurrentBoneID);
+						UpdateButtons();
+					}
                 }
                 else 
                 {
@@ -902,6 +989,16 @@
                 BlockNextAccept = false;
                 return;
             }
+			if(eMode == PRESET_MODE)
+			{
+				PresetLoad();
+				return;
+			}
+			if(eMode == FACE_MODE)
+			{
+				return;
+			}
+			
             if (eMode != FEATURE_CATEGORY_MODE) 
             {
                 if (eMode == FEATURE_MODE && eFeature == AST_EXTRAS) 
@@ -958,7 +1055,7 @@
                     AcceptChanges();
                 }
             }
-            else 
+            else
             {
                 SelectCategory();
             }
@@ -1005,6 +1102,7 @@
                     {
                         loc5 = this.GetBoneRegionIndexFromCurrentID();
                         this.FacialBoneRegions[this.CurrentActor][loc5].presetIntensity = loc1;
+						SetNoContextBoneID(); // Temporary hack, leaving the face area with the cursor causes the boneID to be lost internally
                         this.BGSCodeObj.ChangePresetIntensity(loc1);
                         this.CurrentFeatureIntensity = loc1;
                         this.UpdateFeatureModifierButtonHint();
@@ -1054,34 +1152,6 @@
         public function set BumperJustPressed(arg1:Boolean):*
         {
             this._BumperJustPressed = arg1;
-        }
-
-        internal function __setProp_ButtonHintBar_mc_LooksMenuBase_Shared_0():*
-        {
-            try 
-            {
-                this.ButtonHintBar_mc["componentInspectorSetting"] = true;
-            }
-            catch (e:Error)
-            {
-            };
-            this.ButtonHintBar_mc.BackgroundAlpha = 1;
-            this.ButtonHintBar_mc.BackgroundColor = 0;
-            this.ButtonHintBar_mc.bracketCornerLength = 6;
-            this.ButtonHintBar_mc.bracketLineWidth = 1.5;
-            this.ButtonHintBar_mc.BracketStyle = "horizontal";
-            this.ButtonHintBar_mc.bRedirectToButtonBarMenu = false;
-            this.ButtonHintBar_mc.bShowBrackets = true;
-            this.ButtonHintBar_mc.bUseShadedBackground = true;
-            this.ButtonHintBar_mc.ShadedBackgroundMethod = "Shader";
-            this.ButtonHintBar_mc.ShadedBackgroundType = "normal";
-            try 
-            {
-                this.ButtonHintBar_mc["componentInspectorSetting"] = false;
-            }
-            catch (e:Error)
-            {
-            };
         }
 
         public function set BumperDurationHeld(arg1:Number):*
@@ -1136,21 +1206,22 @@
 
         public function GetBoneRegionIndexFromCurrentID():uint
         {
-            var loc2:*=0;
-            var loc1:*=uint.MAX_VALUE;
+			if(CurrentSelectedBoneID < uint.MAX_VALUE) {
+				CurrentBoneID = CurrentSelectedBoneID;
+			}
+			
+            var foundIndex:uint=uint.MAX_VALUE;
             if (FacialBoneRegions.length > 0) 
             {
-                loc2 = 0;
-                while (loc2 < FacialBoneRegions[CurrentActor].length) 
+                for(var i = 0; i < FacialBoneRegions[CurrentActor].length; i++) 
                 {
-                    if (FacialBoneRegions[CurrentActor][loc2].regionID == CurrentBoneID) 
+                    if (FacialBoneRegions[CurrentActor][i].regionID == CurrentBoneID) 
                     {
-                        loc1 = loc2;
+                        foundIndex = i;
                     }
-                    ++loc2;
                 }
             }
-            return loc1;
+            return foundIndex;
         }
 
         public function SculptModeMouseWheel(arg1:Number):*
@@ -1290,6 +1361,7 @@
                     break;
                 }
             }
+			
             BGSCodeObj.UndoLastAction();
             PreviousMode(false);
         }
@@ -1316,34 +1388,33 @@
 
         internal function TypeMode():*
         {
-            var loc1:*=0;
-            if (this.buttonHint_FaceMode_Type.ButtonEnabled) 
+            if (buttonHint_FaceMode_Type.ButtonEnabled) 
             {
-                if (this.eMode != this.HAIR_MODE) 
+                if (eMode != HAIR_MODE) 
                 {
-                    loc1 = this.GetBoneRegionIndexFromCurrentID();
-                    if (this.FacialBoneRegions[this.CurrentActor][loc1].headPart != this.HeadPartFacialHair) 
+                    var boneIndex = GetBoneRegionIndexFromCurrentID();
+                    if (FacialBoneRegions[CurrentActor][boneIndex].headPart != HeadPartFacialHair) 
                     {
-                        if (this.eMode == this.FACE_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD)) 
+                        if (eMode == FACE_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD)) 
                         {
-                            if (this.CurrentBoneID < uint.MAX_VALUE) 
+                            if (CurrentBoneID < uint.MAX_VALUE) 
                             {
-                                this.FeatureMode(this.AST_MORPHS);
+                                FeatureMode(AST_MORPHS);
                             }
                         }
-                        else if (this.eMode == this.HAIR_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_HAIRCUT)) 
+                        else if (eMode == HAIR_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_HAIRCUT)) 
                         {
-                            this.FeatureMode(this.AST_HAIR);
+                            FeatureMode(AST_HAIR);
                         }
                     }
                     else 
                     {
-                        this.FeatureMode(this.AST_BEARD);
+                        FeatureMode(AST_BEARD);
                     }
                 }
-                else if (this.EditMode == this.EDIT_HAIRCUT && !this._bisFemale) 
+                else if (EditMode == EDIT_HAIRCUT && !_bisFemale) 
                 {
-                    this.FeatureMode(this.AST_BEARD);
+                    FeatureMode(AST_BEARD);
                 }
             }
         }
@@ -1352,54 +1423,49 @@
         {
             var loc1:*=0;
             var loc2:*=undefined;
-            if (this.buttonHint_FaceMode_Color.ButtonEnabled) 
+            if (buttonHint_FaceMode_Color.ButtonEnabled) 
             {
-                if (this.eMode == this.FACE_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD)) 
+                if (eMode == FACE_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD)) 
                 {
-                    loc1 = this.GetBoneRegionIndexFromCurrentID();
-                    loc2 = this.FacialBoneRegions[this.CurrentActor][loc1].headPart;
-                    this.FeatureMode(loc2 != this.HeadPartEyes ? this.AST_COLOR : this.AST_EYES);
+                    loc1 = GetBoneRegionIndexFromCurrentID();
+                    loc2 = FacialBoneRegions[CurrentActor][loc1].headPart;
+                    FeatureMode(loc2 != HeadPartEyes ? AST_COLOR : AST_EYES);
                 }
-                else if (this.eMode == this.HAIR_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_HAIRCUT)) 
+                else if (eMode == HAIR_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_HAIRCUT)) 
                 {
-                    this.FeatureMode(this.AST_HAIR_COLOR);
+                    FeatureMode(AST_HAIR_COLOR);
                 }
             }
         }
 
         public function SculptMode():*
         {
-            var loc1:*=0;
-            var loc2:*=null;
-            var loc3:*=0;
-            if (this.buttonHint_FaceMode_Sculpt.ButtonEnabled && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD)) 
+            if (buttonHint_FaceMode_Sculpt.ButtonEnabled && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD)) 
             {
-                this.eMode = this.SCULPT_MODE;
-                this.UpdateButtons();
-                this.BGSCodeObj.ClearBoneRegionTint();
-                loc1 = this.GetBoneRegionIndexFromCurrentID();
-                loc2 = this.FacialBoneRegions[this.CurrentActor][loc1].axisArray;
-                this.UndoDataSculptingTransform = new Array(loc2.length);
-                loc3 = 0;
-                while (loc3 < loc2.length) 
+                eMode = SCULPT_MODE;
+                UpdateButtons();
+                BGSCodeObj.ClearBoneRegionTint();
+                var boneIndex = GetBoneRegionIndexFromCurrentID();
+                var axisArray = FacialBoneRegions[CurrentActor][boneIndex].axisArray;
+                UndoDataSculptingTransform = new Array(axisArray.length);
+                for (var i = 0; i < axisArray.length; i++)
                 {
-                    if (loc2[loc3].isScalingAxis) 
+                    if (axisArray[i].isScalingAxis) 
                     {
-                        this.UndoDataSculptingTransform[loc3] = loc2[loc3].axisScalingValue;
+                        UndoDataSculptingTransform[i] = axisArray[i].axisScalingValue;
                     }
-                    else if (loc2[loc3].isSlider) 
+                    else if (axisArray[i].isSlider) 
                     {
-                        this.UndoDataSculptingTransform[loc3] = loc2[loc3].axisSliderValue;
+                        UndoDataSculptingTransform[i] = axisArray[i].axisSliderValue;
                     }
-                    ++loc3;
                 }
-                this.BGSCodeObj.CreateUndoPoint(this.UNDO_SCULPT, this.CurrentBoneID);
+                BGSCodeObj.CreateUndoPoint(UNDO_SCULPT, CurrentBoneID);
             }
         }
 
         internal function StartMode():*
         {
-            if (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD) 
+            if (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD || eMode == PRESET_MODE) 
             {
                 this.eMode = this.START_MODE;
                 this.BGSCodeObj.ClearBoneRegionTint();
@@ -1428,23 +1494,174 @@
             }
         }
 
-		internal function PresetMode():*
+		internal function PresetMode()
         {
-            /*if (eMode == START_MODE) 
+            if (eMode == START_MODE || eMode == PRESET_NAME_MODE)
             {
                 eMode = PRESET_MODE;
-                UpdateButtons();
-            }*/
-			root.f4se.plugins.F4EE.SavePreset("Data/F4SE/Plugins/F4EE/Face.json");
+				UpdateButtons();
+				
+				var panelTitle = "$PRESETS";
+				try
+				{
+					FeaturePanel_mc.List_mc.entryList = null;
+					var files = root.f4se.plugins.F4EE.GetExternalFiles("Data/F4SE/Plugins/F4EE/Presets/", ["*.json"], false);
+					for(var i = 0; i < files.length; i++)
+					{
+						if(files[i].directory == false) {
+							FeaturePanel_mc.List_mc.entryList.push({"text":files[i].name, "path":files[i].path});
+						}
+					}
+				}
+				catch(e:Error)
+				{
+					trace("Failed to populate list");
+				}
+								
+				FeatureListChangeLock++;
+				FeaturePanel_mc.List_mc.InvalidateData();
+				FeatureListChangeLock--;
+				FeaturePanel_mc.List_mc.selectedIndex = 0;
+				Shared.GlobalFunc.SetText(FeaturePanel_mc.Brackets_mc.Label_tf, panelTitle, false, true);
+				FeaturePanel_mc.Brackets_mc.UpperHorizontalLine_mc.x = FeaturePanel_mc.Brackets_mc.Label_tf.x + FeaturePanel_mc.Brackets_mc.Label_tf.textWidth + 5;
+				FeaturePanel_mc.Brackets_mc.UpperHorizontalLine_mc.width = FeaturePanel_mc.Brackets_mc.UpperRightCorner_mc.x - FeaturePanel_mc.Brackets_mc.UpperHorizontalLine_mc.x;
+				PreviousStageFocus = stage.focus;
+				stage.focus = FeaturePanel_mc.List_mc;
+            }
         }
+		
+		internal function PresetLoad()
+        {
+			var selectedIndex = FeaturePanel_mc.List_mc.selectedIndex;
+			if(selectedIndex >= 0) {
+				root.f4se.plugins.F4EE.LoadPreset(FeaturePanel_mc.List_mc.entryList[selectedIndex].path);
+			}
+        }
+		
+		public function onMenuKeyUp(event:flash.events.KeyboardEvent):*
+        {			
+			if(event.keyCode == Keyboard.ENTER) {
+				PresetNameConfirm();
+			}
+			else if(event.keyCode == Keyboard.TAB || event.keyCode == Keyboard.ESCAPE) {
+				PresetNameCancel();
+			}
+        }
+		
+		internal function PresetSave()
+        {
+			addEventListener(flash.events.KeyboardEvent.KEY_UP, onMenuKeyUp);
+						
+			eMode = PRESET_NAME_MODE;
+			UpdateButtons();
+			StartEditText();
+        }
+		
+		internal function PresetNameConfirm()
+		{
+			try
+			{
+				root.f4se.plugins.F4EE.SavePreset("Data/F4SE/Plugins/F4EE/Presets/" + PresetInput_mc.Input_tf.text + ".json");
+			}
+			catch(e:Error)
+			{
+				trace("Failed to save preset");
+			}
+			
+			PresetInput_mc.Input_tf.text = "";
+			EndEditText();
+			removeEventListener(flash.events.KeyboardEvent.KEY_UP, onMenuKeyUp);
+			PresetMode();
+		}
+		
+		internal function PresetNameCancel()
+		{
+			EndEditText();
+			removeEventListener(flash.events.KeyboardEvent.KEY_UP, onMenuKeyUp);
+			eMode = PRESET_MODE;
+			UpdateButtons();
+		}
+
+		public function StartEditText()
+		{
+			FeaturePanel_mc.List_mc.disableInput = true;
+			PresetInput_mc.Input_tf.type = TextFieldType.INPUT;
+        	PresetInput_mc.Input_tf.selectable = true;
+         	PresetInput_mc.Input_tf.maxChars = 100;
+			PreviousStageFocus = stage.focus;
+			stage.focus = PresetInput_mc.Input_tf;
+			PresetInput_mc.Input_tf.setSelection(0, PresetInput_mc.Input_tf.text.length);
+			try
+			{
+				root.f4se.plugins.F4EE.AllowTextInput(true);
+			}
+			catch(e:Error)
+			{
+				trace("Failed to enable text input");
+			}
+		}
+		
+		public function EndEditText()
+		{			
+			FeaturePanel_mc.List_mc.disableInput = false;
+			PresetInput_mc.Input_tf.type = TextFieldType.DYNAMIC;
+         	PresetInput_mc.Input_tf.setSelection(0,0);
+         	PresetInput_mc.Input_tf.selectable = false;
+         	PresetInput_mc.Input_tf.maxChars = 0;
+			stage.focus = PreviousStageFocus;
+			try
+			{
+				root.f4se.plugins.F4EE.AllowTextInput(false);
+			}
+			catch(e:Error)
+			{
+				trace("Failed to disable text input");
+			}
+		}
+				
+		internal function onFaceMode()
+		{
+			var foundIndex = -1;
+			var panelTitle = "$FACE";
+			try
+			{
+				FeaturePanel_mc.List_mc.entryList = null;
+				if (FacialBoneRegions.length > 0) 
+				{
+					for(var i = 0; i < FacialBoneRegions[CurrentActor].length; i++) 
+					{
+						if (FacialBoneRegions[CurrentActor][i].regionID == CurrentBoneID) 
+						{
+							foundIndex = i;
+						}
+						FeaturePanel_mc.List_mc.entryList.push({"text":FacialBoneRegions[CurrentActor][i].name, "regionID":FacialBoneRegions[CurrentActor][i].regionID});
+					}
+				}
+			}
+			catch(e:Error)
+			{
+				trace("Failed to populate list");
+			}
+							
+			FeatureListChangeLock++;
+			FeaturePanel_mc.List_mc.InvalidateData();
+			FeatureListChangeLock--;
+			FeaturePanel_mc.List_mc.selectedIndex = foundIndex;
+			Shared.GlobalFunc.SetText(FeaturePanel_mc.Brackets_mc.Label_tf, panelTitle, false, true);
+			FeaturePanel_mc.Brackets_mc.UpperHorizontalLine_mc.x = FeaturePanel_mc.Brackets_mc.Label_tf.x + FeaturePanel_mc.Brackets_mc.Label_tf.textWidth + 5;
+			FeaturePanel_mc.Brackets_mc.UpperHorizontalLine_mc.width = FeaturePanel_mc.Brackets_mc.UpperRightCorner_mc.x - FeaturePanel_mc.Brackets_mc.UpperHorizontalLine_mc.x;
+			PreviousStageFocus = stage.focus;
+			stage.focus = FeaturePanel_mc.List_mc;
+		}
 
         internal function FaceMode():*
         {
-            if (this.eMode == this.START_MODE) 
+            if (eMode == START_MODE) 
             {
-                this.eMode = this.FACE_MODE;
-                this.UpdateButtons();
-                this.BGSCodeObj.ClearPickData();
+                eMode = FACE_MODE;
+                UpdateButtons();
+                BGSCodeObj.ClearPickData();
+				onFaceMode();
             }
         }
 
@@ -1482,7 +1699,7 @@
 
         internal function ConfirmCloseMenu():*
         {
-            if (eMode == START_MODE || eMode == HAIR_MODE && EditMode == EDIT_HAIRCUT) 
+            if (eMode == START_MODE || (eMode == HAIR_MODE && EditMode == EDIT_HAIRCUT) || eMode == PRESET_MODE) 
             {
                 if (BGSCodeObj.ConfirmAndCloseMenu()) 
                 {
@@ -1501,84 +1718,97 @@
         {
             switch (eMode) 
             {
-                case this.SCULPT_MODE:
+                case SCULPT_MODE:
                 {
                     if (notify) 
                     {
-                        this.BGSCodeObj.NotifyForWittyBanter(this.GetBanterFlavor(this.AST_COUNT));
+                        BGSCodeObj.NotifyForWittyBanter(GetBanterFlavor(AST_COUNT));
                     }
-                    this.BGSCodeObj.HighlightBoneRegion(this.CurrentBoneID);
-                    this.menuMode = this.FACE_MODE;
+                    BGSCodeObj.HighlightBoneRegion(CurrentBoneID);
+                    menuMode = FACE_MODE;
                     break;
                 }
-                case this.FEATURE_MODE:
+                case FEATURE_MODE:
                 {
                     if (notify) 
                     {
-                        this.BGSCodeObj.NotifyForWittyBanter(this.GetBanterFlavor(this.eFeature));
+                        BGSCodeObj.NotifyForWittyBanter(GetBanterFlavor(eFeature));
                     }
-                    currentMode = this.eFeature;
+                    currentMode = eFeature;
                     switch (eFeature) 
                     {
-                        case this.AST_HAIR_COLOR:
-                        case this.AST_HAIR:
+                        case AST_HAIR_COLOR:
+                        case AST_HAIR:
                         {
-                            this.menuMode = this.HAIR_MODE;
-                            if (this.EditMode != this.EDIT_HAIRCUT) 
+                            menuMode = HAIR_MODE;
+                            if (EditMode != EDIT_HAIRCUT) 
                             {
-                                this.ShowHairHighlight(true);
+                                ShowHairHighlight(true);
                             }
-                            this.BlockNextAccept = false;
+							onFaceMode(); // Repopulates Face Parts
+                            BlockNextAccept = false;
                             break;
                         }
                         case this.AST_EXTRAS:
                         {
-                            this.BGSCodeObj.ClearTemporaryDetail(this.CurrentExtraGroup);
-                            this.FeatureCategoryMode();
+                            BGSCodeObj.ClearTemporaryDetail(CurrentExtraGroup);
+                            FeatureCategoryMode();
                             break;
                         }
-                        case this.AST_BEARD:
+                        case AST_BEARD:
                         {
-                            this.menuMode = this.EditMode != this.EDIT_HAIRCUT ? this.FACE_MODE : this.HAIR_MODE;
-                            this.BlockNextAccept = false;
+                            menuMode = EditMode != EDIT_HAIRCUT ? FACE_MODE : HAIR_MODE;
+                            BlockNextAccept = false;
                             break;
                         }
                         default:
                         {
-                            this.menuMode = this.FACE_MODE;
-                            this.BlockNextAccept = false;
+                            menuMode = FACE_MODE;
+							onFaceMode(); // Repopulates Face Parts
+                            BlockNextAccept = false;
                             break;
                         }
                     }
-                    if (this.eFeature != this.AST_EXTRAS) 
+                    if (eFeature != AST_EXTRAS) 
                     {
-                        this.BGSCodeObj.HighlightBoneRegion(this.CurrentBoneID);
-                        this.eFeature = this.AST_COUNT;
-                        stage.focus = this.PreviousStageFocus;
+                        BGSCodeObj.HighlightBoneRegion(CurrentBoneID);
+                        eFeature = AST_COUNT;
+                        stage.focus = PreviousStageFocus;
                     }
                     break;
                 }
                 case FEATURE_CATEGORY_MODE:
                 {
-                    this.menuMode = this.START_MODE;
-                    this.eFeature = this.AST_COUNT;
-                    stage.focus = this.PreviousStageFocus;
+                    menuMode = START_MODE;
+                    eFeature = AST_COUNT;
+                    stage.focus = PreviousStageFocus;
                     break;
                 }
-				case PRESET_MODE:
                 case FACE_MODE:
+				{
+					stage.focus = PreviousStageFocus;
+				}
                 case HAIR_MODE:
                 {
-                    this.ShowHairHighlight(false);
-                    this.BGSCodeObj.ClearBoneRegionTint();
+                    ShowHairHighlight(false);
+                    BGSCodeObj.ClearBoneRegionTint();
                 }
                 case BODY_MODE:
                 {
-                    if (this.BGSCodeObj.EndBodyEdit()) 
+                    if (BGSCodeObj.EndBodyEdit()) 
                     {
-                        this.BGSCodeObj.NotifyForWittyBanter(this.BANTER_GENERAL);
-                        this.menuMode = this.START_MODE;
+                        BGSCodeObj.NotifyForWittyBanter(BANTER_GENERAL);
+                        menuMode = START_MODE;
                     }
+                    break;
+                }
+				
+				case PRESET_MODE:
+                {
+					ShowHairHighlight(false);
+                    BGSCodeObj.ClearBoneRegionTint();
+                    menuMode = START_MODE;
+					stage.focus = PreviousStageFocus;
                     break;
                 }
             }
@@ -1587,14 +1817,14 @@
 
         public function ShouldMoveCursor():Boolean
         {
-            return (this.eMode == this.FACE_MODE || this.eMode == this.HAIR_MODE) && !(this.EditMode == this.EDIT_HAIRCUT);
+            return (eMode == FACE_MODE || eMode == HAIR_MODE) && EditMode != EDIT_HAIRCUT;
         }
 
         internal function FeatureModeBack():*
         {
-            this.BGSCodeObj.ClearTemporaryDetail(this.CurrentExtraGroup);
-            this.CurrentExtraGroup = uint.MAX_VALUE;
-            this.FeatureMode(this.AST_EXTRAS);
+            BGSCodeObj.ClearTemporaryDetail(CurrentExtraGroup);
+            CurrentExtraGroup = uint.MAX_VALUE;
+            FeatureMode(AST_EXTRAS);
         }
 
         internal function GetBanterFlavor(arg1:uint):*

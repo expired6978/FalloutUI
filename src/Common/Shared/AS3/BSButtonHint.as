@@ -84,7 +84,7 @@
       
       private var _hitArea:Sprite;
       
-      private var DynamicMovieClip:MovieClip;
+      public var DynamicMovieClip:MovieClip;
       
       private var bButtonFlashing:Boolean;
       
