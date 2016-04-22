@@ -148,6 +148,7 @@
 		internal var _bisFemale:Boolean=false;
 		internal var CurrentActor:uint=0;
 		internal var bInitialized:Boolean=false;
+		internal var bExtensionsInitialized:Boolean=false;
 		public var BGSCodeObj:Object;
 		internal var BlockNextAccept:*=false;
 		internal var LetFeatureListHandleClick:*=true;
@@ -169,6 +170,7 @@
 		internal var CurrentSelectedExtra:uint=0;		
 		public static var GlobalTintColors:Array=[1.0, 0.0, 1.0, 1.0];
 		internal var CurrentSelectedBoneID:uint=4294967295;
+		internal var CurrentHairIndex:uint=4294967295;
 		internal var buttonStatesV:__AS3__.vec.Vector.<Boolean>;
 		
 		public function LooksMenu()
@@ -180,7 +182,7 @@
 			this.buttonHint_StartMode_Body = new Shared.AS3.BSButtonHintData("$BODY", "B", "PSN_B", "Xenon_B", 1, this.BodyMode);
 			this.buttonHint_StartMode_Preset = new Shared.AS3.BSButtonHintData("$$FACE 01", "A", "PSN_L2", "Xenon_L2", 1, this.CharacterPresetRight);
 			this.buttonHint_FaceMode_Sculpt = new Shared.AS3.BSButtonHintData("$SCULPT", "E", "PSN_A", "Xenon_A", 1, this.SculptMode);
-			this.buttonHint_HairMode_Style = new Shared.AS3.BSButtonHintData("$STYLE", "S", "PSN_A", "Xenon_A", 1, this.StyleMode);
+			this.buttonHint_HairMode_Style = new Shared.AS3.BSButtonHintData("$STYLE", "E", "PSN_A", "Xenon_A", 1, this.StyleMode);
 			this.buttonHint_FaceMode_Type = new Shared.AS3.BSButtonHintData("$TYPE", "T", "PSN_X", "Xenon_X", 1, this.TypeMode);
 			this.buttonHint_FaceMode_Color = new Shared.AS3.BSButtonHintData("$COLOR", "C", "PSN_Y", "Xenon_Y", 1, this.ColorMode);
 			this.buttonHint_FaceMode_Back = new Shared.AS3.BSButtonHintData("$BACK", "Esc", "PSN_B", "Xenon_B", 1, this.StartMode);
@@ -256,37 +258,25 @@
 			this.ButtonHintBar_mc.SetButtonHintData(this._buttonHintDataV);
 			this.UpdateButtons();
 			this.bInitialized = true;
-			PresetInput_mc.visible = PresetInput_mc.enabled = false;
-			root.addEventListener("F4SE::Initialized", onF4SEInitialized);
-		}
-				
-		override protected function onStageInit(event:flash.events.Event)
-		{
-			super.onStageInit(event);
-			/*trace("Stage inited");
-			_controlsEnabled = true;
-			_bisFemale = true;
-			SetPlatform(0, false);
-			this.BGSCodeObj = new Object();
-			this.BGSCodeObj["StartBodyEdit"] = function() { }
-			this.BGSCodeObj["WeightPointChange"] = function(x: Number, y: Number) { SetWeightPoint(x,y); }
-			this.eMode = this.BODY_MODE;
-			//utils.Debug.dump("LooksMenu", this, false, 0, function(a_obj){ return ["BGSCodeObj"]; } );
-			try
-			{
-				UpdateButtons();
-			}
-			catch(e:Error)
-			{
-				
-			}
-			onApplyColorChange(1.0, 0, 0, 1.0);*/
+			PresetInput_mc.visible = PresetInput_mc.enabled = false;			
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.bracketCornerLength = 6;
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.bracketLineWidth = 1.5;
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.bracketPaddingX = 0;
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.bracketPaddingY = 0;
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.BracketStyle = "horizontal";
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.bShowBrackets = false;
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.bUseShadedBackground = true;
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.ShadedBackgroundMethod = "Shader";
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.ShadedBackgroundType = "normal";
+			
+			root.addEventListener("F4EE::Initialized", onF4EEInitialized);
 		}
 		
 		public function onApplyColorChange(r, g, b, multiplier): Array
 		{
 			return [r,g,b,multiplier];
 			
+			/*
 			var rint:uint = r * 255;
 			var gint:uint = g * 255;
 			var bint:uint = b * 255;
@@ -332,20 +322,13 @@
 
 			};
 
-			return [1.0, 1.0, 1.0, 1.0];
+			return [1.0, 1.0, 1.0, 1.0];*/
 		}
 		
-		public function onF4SEInitialized(event:flash.events.Event)
+		public function onF4EEInitialized(event:flash.events.Event)
 		{
-			trace("F4SE Initialized.");
-			/*try 
-			{
-				utils.Debug.dump("LooksMenu", this.FeaturePanel_mc, false, 0, root.f4se.GetMembers);
-			}
-			catch(e:Error)
-			{
-				trace("Failed to dump");
-			};*/
+			bExtensionsInitialized = true;
+			UpdateButtons();
 		}
 
 		public function set isFemale(arg1:*):*
@@ -385,43 +368,44 @@
 			var loc4:*=undefined;
 			var loc1:*=this.GetBoneRegionIndexFromCurrentID();
 			var loc2:*=this.eMode == this.SCULPT_MODE || this.eMode == this.FEATURE_MODE;
-			this.buttonHint_StartMode_BodyPreset.ButtonVisible = bInitialized && eMode == START_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD);
-			this.buttonHint_StartMode_Preset.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && this.EditMode == this.EDIT_CHARGEN;
-			this.buttonHint_StartMode_Face.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
-			this.buttonHint_StartMode_Extras.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
-			this.buttonHint_StartMode_Sex.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && this.EditMode == this.EDIT_CHARGEN && this.AllowChangeSex;
-			this.buttonHint_StartMode_Body.ButtonVisible = this.bInitialized && this.eMode == this.START_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
-			this.buttonHint_StartMode_Done.ButtonVisible = bInitialized && (eMode == START_MODE || (eMode == HAIR_MODE && EditMode == EDIT_HAIRCUT) || eMode == PRESET_MODE);
-			this.buttonHint_FaceMode_Sculpt.ButtonVisible = this.eMode == this.FACE_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD);
-			this.buttonHint_HairMode_Style.ButtonVisible = this.eMode == this.HAIR_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_HAIRCUT);
-			this.buttonHint_FaceMode_Type.ButtonVisible = this.eMode == this.FACE_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD) || this.eMode == this.HAIR_MODE && this.EditMode == this.EDIT_HAIRCUT && !this._bisFemale;
-			this.buttonHint_FaceMode_Color.ButtonVisible = this.eMode == this.FACE_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD) || this.eMode == this.HAIR_MODE && (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_HAIRCUT);
-			this.buttonHint_FaceMode_Back.ButtonVisible = (this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_BODYMOD) && (this.eMode == this.FACE_MODE || this.eMode == this.HAIR_MODE);
-			this.buttonHint_EditAccept.ButtonVisible = this.eMode == this.SCULPT_MODE || this.eMode == this.FEATURE_MODE || this.eMode == this.BODY_MODE;
-			this.buttonHint_EditCancel.ButtonVisible = this.eMode == this.SCULPT_MODE || this.eMode == this.FEATURE_MODE || this.eMode == this.BODY_MODE;
-			this.buttonHint_SculptMode_Move.ButtonVisible = this.eMode == this.SCULPT_MODE && (this.GetValidAxis(this.X_AXIS) || this.GetValidAxis(this.Y_AXIS));
-			this.buttonHint_SculptMode_Slide.ButtonVisible = this.eMode == this.SCULPT_MODE && this.GetValidAxis(this.Z_AXIS);
-			this.buttonHint_SculptMode_Rotate.ButtonVisible = this.eMode == this.SCULPT_MODE && this.GetValidAxis(this.X_ROT_AXIS);
-			this.buttonHint_SculptMode_Scale.ButtonVisible = this.eMode == this.SCULPT_MODE && this.GetValidAxis(this.X_SCALE_AXIS);
-			this.buttonHint_FeatureMode_Modifier.ButtonVisible = this.eMode == this.FEATURE_MODE && this.CurrentFeatureIntensity > 0 && !(this.CurrentExtraNumColors == 1);
-			this.buttonHint_FeatureMode_Apply.ButtonVisible = this.eMode == this.FEATURE_MODE && this.eFeature == this.AST_EXTRAS;
-			this.buttonHint_FeatureCategoryMode_RemoveAll.ButtonVisible = this.eMode == this.FEATURE_CATEGORY_MODE;
-			this.buttonHint_FeatureCategoryMode_Select.ButtonVisible = this.eMode == this.FEATURE_CATEGORY_MODE;
-			this.buttonHint_FeatureCategoryMode_Back.ButtonVisible = this.eMode == this.FEATURE_CATEGORY_MODE;
-			this.buttonHint_PresetMode_Load.ButtonVisible = bInitialized && eMode == PRESET_MODE;
-			this.buttonHint_PresetMode_Save.ButtonVisible = bInitialized && eMode == PRESET_MODE;
-			this.buttonHint_PresetMode_Back.ButtonVisible = bInitialized && eMode == PRESET_MODE;
-			this.buttonHint_PresetName_Done.ButtonVisible = bInitialized && eMode == PRESET_NAME_MODE;
-			this.buttonHint_PresetName_Cancel.ButtonVisible = bInitialized && eMode == PRESET_NAME_MODE;
+			buttonHint_StartMode_BodyPreset.ButtonVisible = bInitialized && eMode == START_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD);
+			buttonHint_StartMode_Preset.ButtonVisible = bInitialized && eMode == START_MODE && EditMode == EDIT_CHARGEN;
+			buttonHint_StartMode_Face.ButtonVisible = bInitialized && eMode == START_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD);
+			buttonHint_StartMode_Extras.ButtonVisible = bInitialized && eMode == START_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD);
+			buttonHint_StartMode_Sex.ButtonVisible = bInitialized && eMode == START_MODE && EditMode == EDIT_CHARGEN && AllowChangeSex;
+			buttonHint_StartMode_Body.ButtonVisible = bInitialized && eMode == START_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD);
+			buttonHint_StartMode_Done.ButtonVisible = bInitialized && (eMode == START_MODE || (eMode == HAIR_MODE && EditMode == EDIT_HAIRCUT) || eMode == PRESET_MODE);
+			buttonHint_FaceMode_Sculpt.ButtonVisible = eMode == FACE_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD);
+			buttonHint_HairMode_Style.ButtonVisible = eMode == HAIR_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_HAIRCUT);
+			buttonHint_FaceMode_Type.ButtonVisible = eMode == FACE_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD) || eMode == HAIR_MODE && EditMode == EDIT_HAIRCUT && !_bisFemale;
+			buttonHint_FaceMode_Color.ButtonVisible = eMode == FACE_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD) || eMode == HAIR_MODE && (EditMode == EDIT_CHARGEN || EditMode == EDIT_HAIRCUT);
+			buttonHint_FaceMode_Back.ButtonVisible = (EditMode == EDIT_CHARGEN || EditMode == EDIT_BODYMOD) && (eMode == FACE_MODE || eMode == HAIR_MODE);
+			buttonHint_EditAccept.ButtonVisible = eMode == SCULPT_MODE || eMode == FEATURE_MODE || eMode == BODY_MODE;
+			buttonHint_EditCancel.ButtonVisible = eMode == SCULPT_MODE || eMode == FEATURE_MODE || eMode == BODY_MODE;
+			buttonHint_SculptMode_Move.ButtonVisible = eMode == SCULPT_MODE && (GetValidAxis(X_AXIS) || GetValidAxis(Y_AXIS));
+			buttonHint_SculptMode_Slide.ButtonVisible = eMode == SCULPT_MODE && GetValidAxis(Z_AXIS);
+			buttonHint_SculptMode_Rotate.ButtonVisible = eMode == SCULPT_MODE && GetValidAxis(X_ROT_AXIS);
+			buttonHint_SculptMode_Scale.ButtonVisible = eMode == SCULPT_MODE && GetValidAxis(X_SCALE_AXIS);
+			buttonHint_FeatureMode_Modifier.ButtonVisible = eMode == FEATURE_MODE && CurrentFeatureIntensity > 0 && !(CurrentExtraNumColors == 1);
+			buttonHint_FeatureMode_Apply.ButtonVisible = eMode == FEATURE_MODE && eFeature == AST_EXTRAS;
+			buttonHint_FeatureCategoryMode_RemoveAll.ButtonVisible = eMode == FEATURE_CATEGORY_MODE;
+			buttonHint_FeatureCategoryMode_Select.ButtonVisible = eMode == FEATURE_CATEGORY_MODE;
+			buttonHint_FeatureCategoryMode_Back.ButtonVisible = eMode == FEATURE_CATEGORY_MODE;
+			buttonHint_PresetMode_Load.ButtonVisible = bInitialized && eMode == PRESET_MODE;
+			buttonHint_PresetMode_Save.ButtonVisible = bInitialized && eMode == PRESET_MODE;
+			buttonHint_PresetMode_Back.ButtonVisible = bInitialized && eMode == PRESET_MODE;
+			buttonHint_PresetName_Done.ButtonVisible = bInitialized && eMode == PRESET_NAME_MODE;
+			buttonHint_PresetName_Cancel.ButtonVisible = bInitialized && eMode == PRESET_NAME_MODE;
+			buttonHint_StartMode_BodyPreset.ButtonEnabled = bInitialized && bExtensionsInitialized;
 			PresetInput_mc.visible = PresetInput_mc.enabled = eMode == PRESET_NAME_MODE;
 			
 			var bHitPanel = FeaturePanel_mc.hitTestPoint(Cursor_mc.x, Cursor_mc.y);
 			Cursor_mc.visible = !_loading && EditMode != EDIT_HAIRCUT && (eMode == FACE_MODE || eMode == HAIR_MODE) && !bHitPanel;
-			LoadingSpinner_mc.alpha = _loading ? 1 : 0;
+			LoadingSpinner_mc.visible = _loading ? true : false;
 			FacePartLabel_tf.alpha = EditMode != EDIT_HAIRCUT && eMode != START_MODE && eMode != BODY_MODE && eMode != FEATURE_CATEGORY_MODE && (eMode != FEATURE_MODE || eFeature != AST_EXTRAS);
 			WeightTriangle_mc.alpha = eMode != BODY_MODE ? 0 : 1;
-			FeaturePanel_mc.visible = eMode == FEATURE_MODE || eMode == FEATURE_CATEGORY_MODE || eMode == PRESET_MODE || eMode == FACE_MODE;
-			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.visible = eMode == FEATURE_MODE || eMode == FEATURE_CATEGORY_MODE || eMode == PRESET_MODE || eMode == FACE_MODE;
+			FeaturePanel_mc.visible = eMode == FEATURE_MODE || eMode == FEATURE_CATEGORY_MODE || eMode == PRESET_MODE || eMode == FACE_MODE || (eMode == HAIR_MODE && EditMode != EDIT_HAIRCUT);
+			FeaturePanel_mc.Brackets_mc.BracketExtents_mc.visible = eMode == FEATURE_MODE || eMode == FEATURE_CATEGORY_MODE || eMode == PRESET_MODE || eMode == FACE_MODE || (eMode == HAIR_MODE && EditMode != EDIT_HAIRCUT);
 			var loc5:*=this.eMode;
 			switch (loc5) 
 			{
@@ -507,7 +491,7 @@
 					this.buttonHint_FaceMode_Color.ButtonEnabled = true;
 					this.FacePartLabel_tf.visible = true;
 					this.FacePartLabel_tf.alpha = this.EditMode == this.EDIT_CHARGEN || this.EditMode == this.EDIT_HAIRCUT ? 1 : 0;
-					Shared.GlobalFunc.SetText(this.FacePartLabel_tf, "$HAIR", false, true);
+					Shared.GlobalFunc.SetText(this.FacePartLabel_tf, "$HAIR", false, true);					
 					break;
 				}
 				case PRESET_MODE:
@@ -541,6 +525,18 @@
 			}
 			if (bInitialized) 
 			{
+				if(FeaturePanel_mc.visible && (eMode == FACE_MODE || eMode == HAIR_MODE)) {
+					FeatureListChangeLock++;
+					var index = uint.MAX_VALUE;
+					if(eMode == HAIR_MODE && CurrentHairIndex < uint.MAX_VALUE) {
+						index = CurrentHairIndex;
+					} else {
+						index = GetBoneRegionIndexFromCurrentID();
+					}
+					FeaturePanel_mc.List_mc.selectedIndex = index;
+					FeatureListChangeLock--;
+				}
+			
 				BGSCodeObj.SetSculptMode(eMode == SCULPT_MODE);
 				BGSCodeObj.SetFeatureMode(eMode == FEATURE_MODE);
 				BGSCodeObj.SetBumpersRepeat(loc2);
@@ -550,12 +546,14 @@
 		public function set currentBoneRegionID(id:uint):*
 		{			
 			CurrentBoneID = id;
-			UpdateButtons();
 			
-			if(FeaturePanel_mc.visible && eMode == FACE_MODE && id < uint.MAX_VALUE) {
-				CurrentSelectedBoneID = id;
-				FeaturePanel_mc.List_mc.selectedIndex = GetBoneRegionIndexFromCurrentID();
+			if(FeaturePanel_mc.visible && eMode == FACE_MODE) {
+				if(id < uint.MAX_VALUE) { // Update the bone if valid
+					CurrentSelectedBoneID = id;
+				}
 			}
+			
+			UpdateButtons();
 		}
 
 		public function get menuMode():uint
@@ -977,14 +975,22 @@
 							}
 						}
 					}
-					else if(eMode == FACE_MODE)
+					else if(eMode == FACE_MODE || (eMode == HAIR_MODE && EditMode != EDIT_HAIRCUT))
 					{
+						var currentEntry: Object = FeaturePanel_mc.List_mc.entryList[currentIndex];
 						BGSCodeObj.ClearBoneRegionTint();
-						ShowHairHighlight(false);
-						var currentBone = FeaturePanel_mc.List_mc.entryList[currentIndex].regionID;
-						CurrentBoneID = currentBone;
-						CurrentSelectedBoneID = currentBone;
-						BGSCodeObj.HighlightBoneRegion(CurrentBoneID);
+						if(currentEntry.mode == HAIR_MODE) {
+							ShowHairHighlight(true);
+							eMode = currentEntry.mode;
+						} else {
+							ShowHairHighlight(false);
+							var currentBone = currentEntry.regionID;
+							CurrentBoneID = currentBone;
+							CurrentSelectedBoneID = currentBone;
+							BGSCodeObj.HighlightBoneRegion(CurrentBoneID);
+							eMode = currentEntry.mode;
+						}
+						
 						UpdateButtons();
 					}
 				}
@@ -1216,6 +1222,22 @@
 		{
 			FindAndSetAxisValue(this.X_SCALE_AXIS, false);
 		}
+		
+		public function GetBoneRegionIndexByID(id)
+		{
+			var foundIndex:uint=uint.MAX_VALUE;
+			if (FacialBoneRegions.length > 0) 
+			{
+				for(var i = 0; i < FacialBoneRegions[CurrentActor].length; i++) 
+				{
+					if (FacialBoneRegions[CurrentActor][i].regionID == id) 
+					{
+						foundIndex = i;
+					}
+				}
+			}
+			return foundIndex;
+		}
 
 		public function GetBoneRegionIndexFromCurrentID():uint
 		{
@@ -1223,18 +1245,7 @@
 				CurrentBoneID = CurrentSelectedBoneID;
 			}
 			
-			var foundIndex:uint=uint.MAX_VALUE;
-			if (FacialBoneRegions.length > 0) 
-			{
-				for(var i = 0; i < FacialBoneRegions[CurrentActor].length; i++) 
-				{
-					if (FacialBoneRegions[CurrentActor][i].regionID == CurrentBoneID) 
-					{
-						foundIndex = i;
-					}
-				}
-			}
-			return foundIndex;
+			return GetBoneRegionIndexByID(CurrentBoneID);
 		}
 
 		public function SculptModeMouseWheel(arg1:Number):*
@@ -1394,7 +1405,7 @@
 		internal function StyleMode():*
 		{
 			if (buttonHint_HairMode_Style.ButtonEnabled && eMode == HAIR_MODE) 
-			{
+			{				
 				FeatureMode(AST_HAIR);
 			}
 		}
@@ -1509,7 +1520,7 @@
 
 		internal function PresetMode()
 		{
-			if (eMode == START_MODE || eMode == PRESET_NAME_MODE)
+			if (bExtensionsInitialized && (eMode == START_MODE || eMode == PRESET_NAME_MODE))
 			{
 				eMode = PRESET_MODE;
 				UpdateButtons();
@@ -1647,7 +1658,12 @@
 						{
 							foundIndex = i;
 						}
-						FeaturePanel_mc.List_mc.entryList.push({"text":FacialBoneRegions[CurrentActor][i].name, "regionID":FacialBoneRegions[CurrentActor][i].regionID});
+						FeaturePanel_mc.List_mc.entryList.push({"text":FacialBoneRegions[CurrentActor][i].name, "regionID":FacialBoneRegions[CurrentActor][i].regionID, "mode":FACE_MODE});
+					}
+					
+					if(EditMode != EDIT_BODYMOD)
+					{
+						CurrentHairIndex = FeaturePanel_mc.List_mc.entryList.push({"text":"$HAIR", "regionID":uint.MAX_VALUE, "mode":HAIR_MODE}) - 1;
 					}
 				}
 			}
