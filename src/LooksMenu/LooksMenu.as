@@ -1533,7 +1533,8 @@
 					for(var i = 0; i < files.length; i++)
 					{
 						if(files[i].directory == false) {
-							FeaturePanel_mc.List_mc.entryList.push({"text":files[i].name, "path":files[i].path});
+							var lastIndex: int = files[i].name.lastIndexOf(".");
+							FeaturePanel_mc.List_mc.entryList.push({"text":files[i].name.substring(0, lastIndex), "path":files[i].path});
 						}
 					}
 				}
